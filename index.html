@@ -71,6 +71,21 @@
     margin: 0 4px;
   }
 
+  #backLink {
+    color: var(--blue);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  #backLink:hover {
+    background: #eef4fa;
+    color: var(--blue-dark);
+  }
+
   .btn-load {
     background: var(--green);
     color: white;
@@ -447,8 +462,26 @@
 
 <!-- TOP BAR -->
 <div id="topbar">
+  <a id="backLink" href="https://BillMounce.com/">← Back</a>
+  <div class="divider"></div>
   <h1>ParseWorks</h1>
   <div class="divider"></div>
+  <script>
+    // If the user came from another page, send them back to that exact page.
+    (function () {
+      try {
+        var ref = document.referrer;
+        if (ref) {
+          var refHost = new URL(ref).hostname;
+          var hereHost = window.location.hostname;
+          // Only override if referrer is a different page (not this same app reloading itself)
+          if (refHost !== hereHost || !ref.includes('/Parseworks')) {
+            document.getElementById('backLink').href = ref;
+          }
+        }
+      } catch (e) { /* keep default fallback */ }
+    })();
+  </script>
   <button class="btn-load" onclick="loadChapter()">Click to load chapter:</button>
   <select id="chapterSelect"></select>
   <div class="track-group">
