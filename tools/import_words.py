@@ -60,9 +60,20 @@ CASES = {'nominative': '1', 'genitive': '2', 'dative': '3',
          # one case. The app requires this combined answer rather than
          # accepting either single case.
          'nominative or accusative': '7'}
-NUMBERS = {'singular': '1', 'plural': '2'}
-GENDERS = {'masculine': '1', 'feminine': '2', 'neuter': '3', 'common': '4',
-           'masc/fem': '5', 'masc/neut': '6'}
+NUMBERS = {'singular': '1', 'plural': '2', 's': '1', 'p': '2',
+           'sg': '1', 'pl': '2'}
+# Longest first: the split of a "Aorist Masculine or Neuter" cell tries
+# these as suffixes, and "neuter" must not win over "masculine or neuter".
+GENDERS = {
+    'masculine, feminine, or neuter': '7', 'masc, fem, or neut': '7',
+    'masculine/feminine/neuter': '7', 'masc/fem/neut': '7',
+    'masculine or feminine': '5', 'masc or fem': '5', 'masc/fem': '5',
+    'masculine or neuter': '6', 'masc or neut': '6', 'masc/neut': '6',
+    'masculine': '1', 'masc': '1',
+    'feminine': '2', 'fem': '2',
+    'neuter': '3', 'neut': '3',
+    'common': '4',
+}
 PERSONS = {'1': '1', '2': '2', '3': '3',
            'first': '1', 'second': '2', 'third': '3'}
 TENSES = {'present': '1', 'imperfect': '2', 'future': '3', 'aorist': '4',
@@ -84,7 +95,8 @@ LABELS = {
               '7': 'Nominative or Accusative'},
     'PNUMBER': {'1': 'Singular', '2': 'Plural'},
     'PGENDER': {'1': 'Masculine', '2': 'Feminine', '3': 'Neuter',
-                '4': 'Common', '5': 'Masc/Fem', '6': 'Masc/Neut'},
+                '4': 'Common', '5': 'Masc/Fem', '6': 'Masc/Neut',
+                '7': 'Masc/Fem/Neut'},
     'PPERSON': {'1': 'First', '2': 'Second', '3': 'Third'},
     'PTENSE': {'1': 'Present', '2': 'Imperfect', '3': 'Future',
                '4': 'Aorist', '5': 'Perfect'},
@@ -100,6 +112,24 @@ FIELD_ORDER = ['SEQUENCE', 'CHAPTER', 'TRACK', 'ORDERINCHAPTER', 'INFLECTED',
                'GLOSS', 'AUDIOHINT', 'TEXTHINT', 'PCASE_LABEL',
                'PNUMBER_LABEL', 'PGENDER_LABEL', 'PPERSON_LABEL',
                'PTENSE_LABEL', 'PVOICE_LABEL', 'PMOOD_LABEL', 'ALT']
+
+
+def split_tense_gender(cell):
+    """Read the Tense / Gender cell, which may hold either or both.
+
+    A noun gives a gender ("Neuter"), a finite verb a tense ("Present"), and
+    a participle both ("Aorist Masculine or Neuter"). Returns the tense text
+    and the matched gender key, either of which may be empty.
+    """
+    text = ' '.join(cell.strip().split()).lower()
+    if text in GENDERS:
+        return '', text
+    # Longest gender spelling first, so "masculine or neuter" is preferred
+    # over the "neuter" sitting inside it.
+    for key in sorted(GENDERS, key=len, reverse=True):
+        if text.endswith(' ' + key):
+            return text[:-len(key)].strip(), key
+    return text, ''
 
 
 def blank(cell):
@@ -130,6 +160,11 @@ def parse_row(cells, row_no):
     inflected, person_case, number, tense_gender, voice, mood, lexical, gloss \
         = (unicodedata.normalize('NFC', c.strip()) for c in cells)
 
+    # The export tags a form that occurs twice in the exercise, as
+    # "λαμβάνουσι (2ξ)". The count is a note to the reader; the second
+    # parsing arrives as its own continuation row.
+    inflected = re.sub(r'\s*\([^)]*\)\s*$', '', inflected).strip()
+
     out = dict.fromkeys(
         ['PCASE', 'PNUMBER', 'PGENDER', 'PPERSON', 'PTENSE', 'PVOICE',
          'PMOOD'], None)
@@ -144,10 +179,11 @@ def parse_row(cells, row_no):
         out['PNUMBER'] = lookup(number, NUMBERS, 'Number', row_no)
 
     if not blank(tense_gender):
-        if tense_gender.strip().lower() in GENDERS:
-            out['PGENDER'] = GENDERS[tense_gender.strip().lower()]
-        else:
-            out['PTENSE'] = lookup(tense_gender, TENSES, 'Tense / Gender',
+        tense_part, gender_part = split_tense_gender(tense_gender)
+        if gender_part:
+            out['PGENDER'] = GENDERS[gender_part]
+        if tense_part:
+            out['PTENSE'] = lookup(tense_part, TENSES, 'Tense / Gender',
                                    row_no)
 
     if not blank(voice):
@@ -157,8 +193,12 @@ def parse_row(cells, row_no):
 
     is_verb = out['PPERSON'] is not None or out['PTENSE'] is not None
     is_noun = out['PCASE'] is not None or out['PGENDER'] is not None
-    if is_verb and is_noun:
-        sys.exit(f"row {row_no} ({inflected}): mixes verb and noun parsing")
+    is_participle = out['PMOOD'] == MOODS['participle']
+    # A participle is both, which is the whole point of it; anything else
+    # carrying case and tense at once is a row that slipped a column.
+    if is_verb and is_noun and not is_participle:
+        sys.exit(f"row {row_no} ({inflected}): has both case/gender and "
+                 f"tense/person but is not a participle")
     if not is_verb and not is_noun:
         sys.exit(f"row {row_no} ({inflected}): no parsing information")
 
