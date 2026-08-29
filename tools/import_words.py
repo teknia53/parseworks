@@ -165,6 +165,12 @@ def parse_row(cells, row_no):
     # parsing arrives as its own continuation row.
     inflected = re.sub(r'\s*\([^)]*\)\s*$', '', inflected).strip()
 
+    # Some exports mark the stem/ending boundary with a bullet, and a zero
+    # ending with a dash: "σαρκ • ί" is σαρκί, "σῶμα • –" is σῶμα. The split
+    # is for the reader; TEXTHINT is where the app keeps that information.
+    inflected = re.sub(r'\s*[•·]\s*', '', inflected)
+    inflected = re.sub(r'[–—-]+$', '', inflected).strip()
+
     out = dict.fromkeys(
         ['PCASE', 'PNUMBER', 'PGENDER', 'PPERSON', 'PTENSE', 'PVOICE',
          'PMOOD'], None)
