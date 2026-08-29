@@ -66,12 +66,14 @@ HTML = 'site/index.html'
 # whose nominative and accusative coincide. Those are code 7 now, and no
 # row uses 6, so an import naming "Ablative" is rejected rather than
 # creating a row no dropdown can answer.
-CASES = {'nominative': '1', 'genitive': '2', 'dative': '3',
-         'accusative': '4', 'vocative': '5',
+CASES = {'nominative': '1', 'nom': '1', 'genitive': '2', 'gen': '2',
+         'dative': '3', 'dat': '3', 'accusative': '4', 'acc': '4',
+         'vocative': '5', 'voc': '5',
          # Neuter plurals and the like, where the form cannot be pinned to
          # one case. The app requires this combined answer rather than
          # accepting either single case.
-         'nominative or accusative': '7'}
+         'nominative or accusative': '7', 'nom or acc': '7',
+         'nom/acc': '7'}
 NUMBERS = {'singular': '1', 'plural': '2', 's': '1', 'p': '2',
            'sg': '1', 'pl': '2'}
 # Longest first: the split of a "Aorist Masculine or Neuter" cell tries
@@ -145,7 +147,10 @@ def split_tense_gender(cell):
 
 
 def blank(cell):
-    return cell.strip() == '' or cell.strip().lower() in ('none', 'n/a', '-')
+    # A dash of any width is the export's other way of writing "None".
+    return (cell.strip() == ''
+            or cell.strip().lower() in ('none', 'n/a', 'na')
+            or set(cell.strip()) <= {'-', '–', '—'} and cell.strip() != '')
 
 
 def lookup(cell, table, field, row_no):
