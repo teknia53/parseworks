@@ -5,6 +5,16 @@ Input is a tab-separated file whose first line is a header:
 
     Inflected  Person / Case  Number  Tense / Gender  Voice  Mood  Lexical Form  Inflected Meaning
 
+An optional row number may lead each line, making nine columns instead of
+eight and putting Lexical Form eighth:
+
+    #  Inflected  Person / Case  Number  Tense / Gender  Voice  Mood  Lexical Form  Inflected Meaning
+
+The layout is detected from the data rows, not the header, so a numbered
+export works whether or not its header names the number column. When row
+numbers are present they must run 1..n in order; a gap or a repeat means
+lines were dropped or duplicated in the paste, and the import stops.
+
 Two columns do double duty. "Person / Case" is a person when numeric and a
 case otherwise; "Tense / Gender" is a gender when it names one and a tense
 otherwise. Empty cells and the literal "None" both mean not applicable.
@@ -24,6 +34,7 @@ Without --apply it prints the changes and writes nothing.
 """
 
 import argparse
+import collections
 import json
 import re
 import sys
@@ -136,15 +147,35 @@ def parse_row(cells, row_no):
 def read_tsv(path):
     with open(path, encoding='utf-8') as fh:
         lines = [ln.rstrip('\n') for ln in fh if ln.strip()]
-    header = lines[0].split('\t')
-    if len(header) != 8:
-        sys.exit(f"expected 8 tab-separated columns in the header, got "
-                 f"{len(header)}: {header}")
+    if len(lines) < 2:
+        sys.exit("file has a header but no data rows")
+
+    body = lines[1:]
+    # Detect the layout from the most common row width, so one ragged line
+    # cannot flip the whole file into the wrong format.
+    widths = collections.Counter(len(ln.split('\t')) for ln in body)
+    width = widths.most_common(1)[0][0]
+    if width not in (8, 9):
+        sys.exit(f"expected 8 or 9 tab-separated columns per row, most rows "
+                 f"have {width}. widths seen: {dict(widths)}")
+    numbered = width == 9
+    print(f"reading {len(body)} rows, "
+          f"{'numbered' if numbered else 'unnumbered'} ({width} columns)")
+
     rows = []
-    for i, line in enumerate(lines[1:], start=2):
+    for i, line in enumerate(body, start=2):
         cells = line.split('\t')
-        if len(cells) != 8:
-            sys.exit(f"row {i}: expected 8 columns, got {len(cells)}")
+        if len(cells) != width:
+            sys.exit(f"row {i}: expected {width} columns, got {len(cells)}. "
+                     f"a tab may be missing: {line!r}")
+        if numbered:
+            ordinal, cells = cells[0].strip().rstrip('.'), cells[1:]
+            if not ordinal.isdigit():
+                sys.exit(f"row {i}: leading column {ordinal!r} is not a "
+                         f"number. is this really a numbered export?")
+            if int(ordinal) != len(rows) + 1:
+                sys.exit(f"row {i}: row numbers must run 1..n in order; "
+                         f"expected {len(rows) + 1}, found {ordinal}")
         rows.append(parse_row(cells, i))
     return rows
 
