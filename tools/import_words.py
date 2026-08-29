@@ -271,13 +271,21 @@ def describe(row):
                     if row[f + '_LABEL'] != 'N/A')
 
 
-def alt_entry(row):
-    """The subset of a parsed row stored as an alternate reading."""
+def alt_entry(row, primary_lexical):
+    """The subset of a parsed row stored as an alternate reading.
+
+    A reading may belong to a different word: ἐμοῦ is the genitive of the
+    pronoun ἐγώ and equally of the adjective ἐμός. Carry the lexical form
+    when it differs, so either answer is accepted.
+    """
     entry = {}
     for field in ALT_FIELDS:
         entry[field] = row[field]
         entry[field + '_LABEL'] = row[field + '_LABEL']
     entry['GLOSS'] = row['GLOSS']
+    if row['LEXICAL'] and row['LEXICAL'] != primary_lexical:
+        entry['LEXICAL'] = row['LEXICAL']
+        entry['LEXICALNOACCENTS'] = strip_accents(row['LEXICAL'])
     return entry
 
 
@@ -292,10 +300,13 @@ def read_tsv(path):
     # cannot flip the whole file into the wrong format.
     widths = collections.Counter(len(ln.split('\t')) for ln in body)
     width = widths.most_common(1)[0][0]
-    if width not in (8, 9):
-        sys.exit(f"expected 8 or 9 tab-separated columns per row, most rows "
-                 f"have {width}. widths seen: {dict(widths)}")
+    if width not in (6, 8, 9):
+        sys.exit(f"expected 6, 8 or 9 tab-separated columns per row, most "
+                 f"rows have {width}. widths seen: {dict(widths)}")
     numbered = width == 9
+    # A chapter of nouns and pronouns is exported without the verb columns:
+    # Inflected, Case, Number, Gender, Lexical Form, Inflected Meaning.
+    nouns_only = width == 6
     print(f"reading {len(body)} rows, "
           f"{'numbered' if numbered else 'unnumbered'} ({width} columns)")
 
@@ -308,6 +319,11 @@ def read_tsv(path):
         ordinal = None
         if numbered:
             ordinal, cells = cells[0].strip().rstrip('.'), cells[1:]
+        if nouns_only:
+            # Widen to the full shape, leaving voice and mood unstated so
+            # they keep whatever the app holds rather than resetting.
+            inflected, case, num, gender, lexical, gloss = cells
+            cells = [inflected, case, num, gender, '', '', lexical, gloss]
         parsed = parse_row(cells, i)
 
         if parsed['IS_ALT']:
@@ -368,12 +384,21 @@ def main():
             # Anything it left blank is the same as the word above.
             row = dict(row, INFLECTED=target['INFLECTED'],
                        LEXICAL=row['LEXICAL'] or target['LEXICAL'])
+            # A reading of a different word inherits the shape of the form —
+            # its case and number are the same letters, after all — but not
+            # person, which belongs to the lexeme. ἐμοῦ is first person as
+            # the pronoun ἐγώ and personless as the adjective ἐμός.
+            own_word = row['LEXICAL'] and row['LEXICAL'] != target['LEXICAL']
             for field in row['UNSTATED']:
+                if field == 'PPERSON' and own_word:
+                    row[field], row[field + '_LABEL'] = None, 'N/A'
+                    continue
                 row[field] = target[field]
                 row[field + '_LABEL'] = target[field + '_LABEL']
-            target['ALT'] = (target.get('ALT') or []) + [alt_entry(row)]
+            entry = alt_entry(row, target['LEXICAL'])
+            target['ALT'] = (target.get('ALT') or []) + [entry]
             alternates.append((target['INFLECTED'], describe(row),
-                               row['GLOSS']))
+                               row['GLOSS'], entry.get('LEXICAL')))
             continue
 
         # Where a chapter holds the same form more than once, take the copy
@@ -438,8 +463,9 @@ def main():
             print(f"    {form:<14} {field:<9} {label}")
     if alternates:
         print("  extra parsings accepted as correct:")
-        for form, parsing, gloss in alternates:
-            print(f"    {form}: {parsing} -> {gloss!r}")
+        for form, parsing, gloss, lexical in alternates:
+            lex = f" [lexical {lexical}]" if lexical else ""
+            print(f"    {form}: {parsing}{lex} -> {gloss!r}")
     if leftover:
         verb = "DELETED" if args.prune else "NOT IN INPUT (left untouched)"
         print(f"  {verb}: " + ', '.join(
