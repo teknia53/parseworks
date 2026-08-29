@@ -1,0 +1,13 @@
+name = "parseworks-proxy"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+routes = [
+  { pattern = "billmounce.com/pw*", zone_name = "billmounce.com" },
+  { pattern = "www.billmounce.com/pw*", zone_name = "billmounce.com" },
+  # Legacy path, apex only. Not routed on www, where /parseworks is a Drupal info node.
+  { pattern = "billmounce.com/parseworks*", zone_name = "billmounce.com" }
+]
+
+[vars]
+PAGES_URL = "https://parseworks.pages.dev"

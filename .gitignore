@@ -3,3 +3,12 @@
 2026-03-08_16-04-06.jpg
 ParseWorks.zip
 parseworks.sqlite
+
+# Wrangler local build/cache state
+.wrangler/
+
+# Local scratch copies
+untitled folder/
+
+# Local-only Claude Code settings
+.claude/settings.local.json
