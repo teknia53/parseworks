@@ -43,7 +43,11 @@ import unicodedata
 HTML = 'site/index.html'
 
 CASES = {'nominative': '1', 'genitive': '2', 'dative': '3',
-         'accusative': '4', 'ablative': '6'}
+         'accusative': '4', 'vocative': '5', 'ablative': '6',
+         # Neuter plurals and the like, where the form cannot be pinned to
+         # one case. The app requires this combined answer rather than
+         # accepting either single case.
+         'nominative or accusative': '7'}
 NUMBERS = {'singular': '1', 'plural': '2'}
 GENDERS = {'masculine': '1', 'feminine': '2', 'neuter': '3', 'common': '4',
            'masc/fem': '5', 'masc/neut': '6'}
@@ -57,7 +61,12 @@ MOODS = {'indicative': '1', 'participle': '2', 'imperative': '3',
          'optative': '4', 'infinitive': '5'}
 
 LABELS = {
-    'PCASE': {v: k.capitalize() for k, v in CASES.items()},
+    # Spelled out rather than derived from CASES, because the label must
+    # match the dropdown option text exactly and capitalize() would lower
+    # the "Accusative" in the combined form.
+    'PCASE': {'1': 'Nominative', '2': 'Genitive', '3': 'Dative',
+              '4': 'Accusative', '5': 'Vocative', '6': 'Ablative',
+              '7': 'Nominative or Accusative'},
     'PNUMBER': {'1': 'Singular', '2': 'Plural'},
     'PGENDER': {'1': 'Masculine', '2': 'Feminine', '3': 'Neuter',
                 '4': 'Common', '5': 'Masc/Fem', '6': 'Masc/Neut'},
@@ -100,8 +109,11 @@ def strip_accents(text):
 
 def parse_row(cells, row_no):
     """Turn one input row into parsing codes. Returns a dict of P* fields."""
+    # Normalize to NFC so oxia and tonos spellings of the same Greek word
+    # compare equal. Without this an import silently adds a duplicate row
+    # instead of updating the one already there.
     inflected, person_case, number, tense_gender, voice, mood, lexical, gloss \
-        = (c.strip() for c in cells)
+        = (unicodedata.normalize('NFC', c.strip()) for c in cells)
 
     out = dict.fromkeys(
         ['PCASE', 'PNUMBER', 'PGENDER', 'PPERSON', 'PTENSE', 'PVOICE',
