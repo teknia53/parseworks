@@ -19,6 +19,18 @@ Two columns do double duty. "Person / Case" is a person when numeric and a
 case otherwise; "Tense / Gender" is a gender when it names one and a tense
 otherwise. Empty cells and the literal "None" both mean not applicable.
 
+A row whose Inflected cell is empty is another acceptable parsing of the
+word above it, not a word of its own. ἐπηρώτων, for instance, is imperfect
+active first singular "I was asking" and equally third plural "they were
+asking", so its second reading is written:
+
+    ἐπηρώτων  1  Singular  Imperfect  Active  Indicative  ἐπερωτάω  I was asking
+              3  Plural                                             they were asking
+
+Alternates are stored on the primary row's ALT list, and the app accepts
+any one of them as correct. They do not take a row number or a position in
+the chapter; the word is still shown once.
+
 Rows are matched against existing entries for the same track and chapter by
 inflected form. Matched rows are updated in place, keeping TEXTHINT and
 AUDIOHINT, which the export does not carry. Unmatched input rows are added.
@@ -87,7 +99,7 @@ FIELD_ORDER = ['SEQUENCE', 'CHAPTER', 'TRACK', 'ORDERINCHAPTER', 'INFLECTED',
                'PNUMBER', 'PGENDER', 'PPERSON', 'PTENSE', 'PVOICE', 'PMOOD',
                'GLOSS', 'AUDIOHINT', 'TEXTHINT', 'PCASE_LABEL',
                'PNUMBER_LABEL', 'PGENDER_LABEL', 'PPERSON_LABEL',
-               'PTENSE_LABEL', 'PVOICE_LABEL', 'PMOOD_LABEL']
+               'PTENSE_LABEL', 'PVOICE_LABEL', 'PMOOD_LABEL', 'ALT']
 
 
 def blank(cell):
@@ -156,7 +168,50 @@ def parse_row(cells, row_no):
     out['INFLECTED'] = inflected
     out['LEXICAL'] = lexical
     out['GLOSS'] = gloss
+    # An empty Inflected cell marks another parsing of the word above.
+    out['IS_ALT'] = inflected == ''
+    # Which parse fields the row left genuinely blank. On an alternate these
+    # inherit from the word above, so a reading that differs only in person
+    # need restate nothing else. An explicit "None" is not blank: it means
+    # the field does not apply, and is kept as N/A.
+    unstated = set()
+    if person_case == '':
+        unstated |= {'PPERSON', 'PCASE'}
+    if number == '':
+        unstated.add('PNUMBER')
+    if tense_gender == '':
+        unstated |= {'PTENSE', 'PGENDER'}
+    if voice == '':
+        unstated.add('PVOICE')
+    if mood == '':
+        unstated.add('PMOOD')
+    out['UNSTATED'] = unstated
     return out
+
+
+ALT_FIELDS = ['PCASE', 'PNUMBER', 'PGENDER', 'PPERSON', 'PTENSE', 'PVOICE',
+              'PMOOD']
+
+
+SPOKEN_ORDER = ['PPERSON', 'PCASE', 'PNUMBER', 'PGENDER', 'PTENSE', 'PVOICE',
+                'PMOOD']
+
+
+def describe(row):
+    """A reading as it would be said aloud, skipping fields that do not
+    apply: "third plural imperfect active indicative"."""
+    return ' '.join(row[f + '_LABEL'] for f in SPOKEN_ORDER
+                    if row[f + '_LABEL'] != 'N/A')
+
+
+def alt_entry(row):
+    """The subset of a parsed row stored as an alternate reading."""
+    entry = {}
+    for field in ALT_FIELDS:
+        entry[field] = row[field]
+        entry[field + '_LABEL'] = row[field + '_LABEL']
+    entry['GLOSS'] = row['GLOSS']
+    return entry
 
 
 def read_tsv(path):
@@ -183,15 +238,28 @@ def read_tsv(path):
         if len(cells) != width:
             sys.exit(f"row {i}: expected {width} columns, got {len(cells)}. "
                      f"a tab may be missing: {line!r}")
+        ordinal = None
         if numbered:
             ordinal, cells = cells[0].strip().rstrip('.'), cells[1:]
+        parsed = parse_row(cells, i)
+
+        if parsed['IS_ALT']:
+            if not rows:
+                sys.exit(f"row {i}: the first row has no inflected form, so "
+                         f"there is no word for it to be a parsing of")
+            if ordinal:
+                sys.exit(f"row {i}: an alternate parsing must not carry a row "
+                         f"number; it is not a word of its own")
+        elif numbered:
+            # Alternates take no number, so count only the real words.
+            words = sum(1 for r in rows if not r['IS_ALT'])
             if not ordinal.isdigit():
                 sys.exit(f"row {i}: leading column {ordinal!r} is not a "
                          f"number. is this really a numbered export?")
-            if int(ordinal) != len(rows) + 1:
+            if int(ordinal) != words + 1:
                 sys.exit(f"row {i}: row numbers must run 1..n in order; "
-                         f"expected {len(rows) + 1}, found {ordinal}")
-        rows.append(parse_row(cells, i))
+                         f"expected {words + 1}, found {ordinal}")
+        rows.append(parsed)
     return rows
 
 
@@ -219,9 +287,24 @@ def main():
         by_form.setdefault(d['INFLECTED'], []).append(d)
 
     next_seq = max(int(d['SEQUENCE']) for d in data) + 1
-    updated, added, changes = [], [], []
+    updated, added, changes, alternates = [], [], [], []
 
-    for order, row in enumerate(incoming):
+    order = 0
+    target = None
+    for row in incoming:
+        if row['IS_ALT']:
+            # Another reading of the word above, not a word of its own.
+            # Anything it left blank is the same as the word above.
+            row = dict(row, INFLECTED=target['INFLECTED'],
+                       LEXICAL=row['LEXICAL'] or target['LEXICAL'])
+            for field in row['UNSTATED']:
+                row[field] = target[field]
+                row[field + '_LABEL'] = target[field + '_LABEL']
+            target['ALT'] = (target.get('ALT') or []) + [alt_entry(row)]
+            alternates.append((target['INFLECTED'], describe(row),
+                               row['GLOSS']))
+            continue
+
         match = by_form.get(row['INFLECTED'])
         target = match.pop(0) if match else None
 
@@ -240,9 +323,14 @@ def main():
                                     target.get(field), row[field]))
             updated.append(row['INFLECTED'])
 
-        target.update(row)
+        target.update({k: v for k, v in row.items()
+                       if k not in ('IS_ALT', 'UNSTATED')})
         target['ORDERINCHAPTER'] = str(order)
         target['LEXICALNOACCENTS'] = strip_accents(row['LEXICAL'])
+        # Drop any alternates already stored; the import is authoritative, so
+        # re-running it must not stack duplicate readings onto the row.
+        target['ALT'] = None
+        order += 1
 
     leftover = [d['INFLECTED'] for forms in by_form.values() for d in forms]
 
@@ -250,6 +338,10 @@ def main():
           f"{len(updated)} updated, {len(added)} added")
     if added:
         print("  added:  " + ', '.join(added))
+    if alternates:
+        print("  extra parsings accepted as correct:")
+        for form, parsing, gloss in alternates:
+            print(f"    {form}: {parsing} -> {gloss!r}")
     if leftover:
         print("  NOT IN INPUT (left untouched): " + ', '.join(leftover))
     if changes:
