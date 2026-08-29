@@ -73,7 +73,9 @@ CASES = {'nominative': '1', 'nom': '1', 'genitive': '2', 'gen': '2',
          # one case. The app requires this combined answer rather than
          # accepting either single case.
          'nominative or accusative': '7', 'nom or acc': '7',
-         'nom/acc': '7'}
+         'nom/acc': '7', 'nominative / accusative': '7',
+         'accusative or nominative': '7', 'accusative / nominative': '7',
+         'acc or nom': '7', 'acc/nom': '7'}
 NUMBERS = {'singular': '1', 'plural': '2', 's': '1', 'p': '2',
            'sg': '1', 'pl': '2'}
 # Longest first: the split of a "Aorist Masculine or Neuter" cell tries
@@ -402,8 +404,12 @@ def main():
         if row['IS_ALT']:
             # Another reading of the word above, not a word of its own.
             # Anything it left blank is the same as the word above.
+            # A blank gloss on an alternate means "same meaning", not "no
+            # meaning". Left empty it would also match any answer, since
+            # the gloss check asks whether the answer contains it.
             row = dict(row, INFLECTED=target['INFLECTED'],
-                       LEXICAL=row['LEXICAL'] or target['LEXICAL'])
+                       LEXICAL=row['LEXICAL'] or target['LEXICAL'],
+                       GLOSS=row['GLOSS'] or target['GLOSS'])
             # A reading of a different word inherits the shape of the form —
             # its case and number are the same letters, after all — but not
             # person, which belongs to the lexeme. ἐμοῦ is first person as
