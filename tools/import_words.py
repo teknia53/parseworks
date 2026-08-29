@@ -312,10 +312,19 @@ def read_tsv(path):
     if width not in (6, 8, 9):
         sys.exit(f"expected 6, 8 or 9 tab-separated columns per row, most "
                  f"rows have {width}. widths seen: {dict(widths)}")
-    numbered = width == 9
+    # Nine columns is either a leading row number or a second form beside
+    # the inflected one. Tell them apart by what is actually in column one.
+    first = body[0].split('\t')[0].strip().rstrip('.')
+    numbered = width == 9 and first.isdigit()
+    # "Other tense" sits second and holds the same verb in its other tense,
+    # for the reader's reference. The app has nowhere to put it.
+    other_form = width == 9 and not numbered
     # A chapter of nouns and pronouns is exported without the verb columns:
     # Inflected, Case, Number, Gender, Lexical Form, Inflected Meaning.
     nouns_only = width == 6
+    if other_form:
+        print("  column 2 looks like a second form, not a row number; "
+              "ignoring it")
     print(f"reading {len(body)} rows, "
           f"{'numbered' if numbered else 'unnumbered'} ({width} columns)")
 
@@ -328,6 +337,8 @@ def read_tsv(path):
         ordinal = None
         if numbered:
             ordinal, cells = cells[0].strip().rstrip('.'), cells[1:]
+        elif other_form:
+            cells = [cells[0]] + cells[2:]
         if nouns_only:
             # Widen to the full shape, leaving voice and mood unstated so
             # they keep whatever the app holds rather than resetting.
