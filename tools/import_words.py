@@ -269,6 +269,10 @@ def main():
     ap.add_argument('--chapter', required=True)
     ap.add_argument('--track', required=True, choices=['1', '2'])
     ap.add_argument('--apply', action='store_true')
+    ap.add_argument('--prune', action='store_true',
+                    help='delete rows in this chapter that the file does not '
+                         'list. Use when the file is the whole chapter, to '
+                         'clear out duplicates and stale entries.')
     args = ap.parse_args()
 
     if not 1 <= int(args.chapter) <= 36:
@@ -305,8 +309,16 @@ def main():
                                row['GLOSS']))
             continue
 
+        # Where a chapter holds the same form more than once, take the copy
+        # sitting nearest this row's position rather than the first found,
+        # so the survivor keeps the audio hint that belongs to the slot.
         match = by_form.get(row['INFLECTED'])
-        target = match.pop(0) if match else None
+        target = None
+        if match:
+            nearest = min(match,
+                          key=lambda d: abs(int(d['ORDERINCHAPTER']) - order))
+            match.remove(nearest)
+            target = nearest
 
         if target is None:
             target = {f: None for f in FIELD_ORDER}
@@ -332,7 +344,11 @@ def main():
         target['ALT'] = None
         order += 1
 
-    leftover = [d['INFLECTED'] for forms in by_form.values() for d in forms]
+    stale = [d for forms in by_form.values() for d in forms]
+    leftover = [d['INFLECTED'] for d in stale]
+    if args.prune and stale:
+        drop = {id(d) for d in stale}
+        data = [d for d in data if id(d) not in drop]
 
     print(f"chapter {args.chapter}, track {args.track}: "
           f"{len(updated)} updated, {len(added)} added")
@@ -343,7 +359,12 @@ def main():
         for form, parsing, gloss in alternates:
             print(f"    {form}: {parsing} -> {gloss!r}")
     if leftover:
-        print("  NOT IN INPUT (left untouched): " + ', '.join(leftover))
+        verb = "DELETED" if args.prune else "NOT IN INPUT (left untouched)"
+        print(f"  {verb}: " + ', '.join(
+            f"{d['INFLECTED']} (seq {d['SEQUENCE']}, was #"
+            f"{int(d['ORDERINCHAPTER']) + 1})" for d in stale))
+        if not args.prune:
+            print("    pass --prune to remove these")
     if changes:
         print("  field changes:")
         for form, field, old, new in changes:
