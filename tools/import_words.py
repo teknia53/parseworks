@@ -62,8 +62,12 @@ import unicodedata
 
 HTML = 'site/index.html'
 
+# Code 6 was ablative, which BBG does not teach; it used to hold the forms
+# whose nominative and accusative coincide. Those are code 7 now, and no
+# row uses 6, so an import naming "Ablative" is rejected rather than
+# creating a row no dropdown can answer.
 CASES = {'nominative': '1', 'genitive': '2', 'dative': '3',
-         'accusative': '4', 'vocative': '5', 'ablative': '6',
+         'accusative': '4', 'vocative': '5',
          # Neuter plurals and the like, where the form cannot be pinned to
          # one case. The app requires this combined answer rather than
          # accepting either single case.
@@ -99,7 +103,7 @@ LABELS = {
     # match the dropdown option text exactly and capitalize() would lower
     # the "Accusative" in the combined form.
     'PCASE': {'1': 'Nominative', '2': 'Genitive', '3': 'Dative',
-              '4': 'Accusative', '5': 'Vocative', '6': 'Ablative',
+              '4': 'Accusative', '5': 'Vocative',
               '7': 'Nominative or Accusative'},
     'PNUMBER': {'1': 'Singular', '2': 'Plural'},
     'PGENDER': {'1': 'Masculine', '2': 'Feminine', '3': 'Neuter',
