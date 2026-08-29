@@ -16,8 +16,16 @@ numbers are present they must run 1..n in order; a gap or a repeat means
 lines were dropped or duplicated in the paste, and the import stops.
 
 Two columns do double duty. "Person / Case" is a person when numeric and a
-case otherwise; "Tense / Gender" is a gender when it names one and a tense
-otherwise. Empty cells and the literal "None" both mean not applicable.
+case otherwise; "Tense / Gender" is a gender when it names one, a tense
+when it names one, and both for a participle: "Aorist Masculine or Neuter".
+
+Because a shared column can only say one thing at a time, stating one field
+leaves its partner unsaid, and an empty cell says nothing about either.
+Unsaid is not the same as inapplicable: an unsaid field keeps whatever the
+app already stores, while the literal "None" sets it to N/A. This is what
+lets an export that has spent its Person / Case column on a pronoun's case
+leave that pronoun's stored person alone rather than erasing it. Every such
+kept value is listed in the run's output.
 
 A row whose Inflected cell is empty is another acceptable parsing of the
 word above it, not a word of its own. ἐπηρώτων, for instance, is imperfect
@@ -216,21 +224,34 @@ def parse_row(cells, row_no):
     out['GLOSS'] = gloss
     # An empty Inflected cell marks another parsing of the word above.
     out['IS_ALT'] = inflected == ''
-    # Which parse fields the row left genuinely blank. On an alternate these
-    # inherit from the word above, so a reading that differs only in person
-    # need restate nothing else. An explicit "None" is not blank: it means
-    # the field does not apply, and is kept as N/A.
+    # Which parse fields this row does not speak to. Two columns are shared
+    # by a pair of fields, so stating one always leaves the other unsaid:
+    # "Dative" in Person / Case gives the case and says nothing about
+    # person. An empty cell says nothing about either. An explicit "None" is
+    # different — it states that neither applies, and holds them at N/A.
+    #
+    # On an alternate row an unstated field inherits from the word above; on
+    # a word already in the app it keeps the value already stored. That is
+    # what lets an export that cannot write a pronoun's person leave the
+    # stored person alone instead of erasing it.
     unstated = set()
     if person_case == '':
         unstated |= {'PPERSON', 'PCASE'}
-    if number == '':
-        unstated.add('PNUMBER')
+    elif not blank(person_case):
+        unstated.add('PCASE' if out['PPERSON'] else 'PPERSON')
+
     if tense_gender == '':
         unstated |= {'PTENSE', 'PGENDER'}
-    if voice == '':
-        unstated.add('PVOICE')
-    if mood == '':
-        unstated.add('PMOOD')
+    elif not blank(tense_gender):
+        if out['PTENSE'] and not out['PGENDER']:
+            unstated.add('PGENDER')
+        elif out['PGENDER'] and not out['PTENSE']:
+            unstated.add('PTENSE')
+
+    for cell, field in ((number, 'PNUMBER'), (voice, 'PVOICE'),
+                        (mood, 'PMOOD')):
+        if cell == '':
+            unstated.add(field)
     out['UNSTATED'] = unstated
     return out
 
@@ -337,7 +358,7 @@ def main():
         by_form.setdefault(d['INFLECTED'], []).append(d)
 
     next_seq = max(int(d['SEQUENCE']) for d in data) + 1
-    updated, added, changes, alternates = [], [], [], []
+    updated, added, changes, alternates, kept = [], [], [], [], []
 
     order = 0
     target = None
@@ -374,12 +395,23 @@ def main():
             data.append(target)
             added.append(row['INFLECTED'])
         else:
-            for field in ('GLOSS', 'LEXICAL', 'PCASE', 'PNUMBER', 'PGENDER',
-                          'PPERSON', 'PTENSE', 'PVOICE', 'PMOOD'):
-                if target.get(field) != row[field]:
-                    changes.append((row['INFLECTED'], field,
-                                    target.get(field), row[field]))
             updated.append(row['INFLECTED'])
+
+        # A field the row does not speak to keeps whatever is already
+        # stored, rather than being erased to N/A. Do this before the diff
+        # below, so a kept field is not reported as a change.
+        for field in row['UNSTATED']:
+            if target.get(field) is not None:
+                kept.append((row['INFLECTED'], field,
+                             target[field + '_LABEL']))
+            row[field] = target.get(field)
+            row[field + '_LABEL'] = target.get(field + '_LABEL') or 'N/A'
+
+        for field in ('GLOSS', 'LEXICAL', 'PCASE', 'PNUMBER', 'PGENDER',
+                      'PPERSON', 'PTENSE', 'PVOICE', 'PMOOD'):
+            if target.get(field) != row[field]:
+                changes.append((row['INFLECTED'], field,
+                                target.get(field), row[field]))
 
         target.update({k: v for k, v in row.items()
                        if k not in ('IS_ALT', 'UNSTATED')})
@@ -400,6 +432,10 @@ def main():
           f"{len(updated)} updated, {len(added)} added")
     if added:
         print("  added:  " + ', '.join(added))
+    if kept:
+        print("  left as already stored, since the file does not state them:")
+        for form, field, label in kept:
+            print(f"    {form:<14} {field:<9} {label}")
     if alternates:
         print("  extra parsings accepted as correct:")
         for form, parsing, gloss in alternates:
