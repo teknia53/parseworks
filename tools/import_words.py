@@ -77,7 +77,7 @@ LABELS = {
     'PTENSE': {'1': 'Present', '2': 'Imperfect', '3': 'Future',
                '4': 'Aorist', '5': 'Perfect'},
     'PVOICE': {'1': 'Active', '2': 'Middle', '3': 'Passive',
-               '4': 'Middle/Passive', '5': 'Dep'},
+               '4': 'Middle/Passive', '5': 'Deponent'},
     'PMOOD': {'1': 'Indicative', '2': 'Participle', '3': 'Imperative',
               '4': 'Optative', '5': 'Infinitive'},
 }
