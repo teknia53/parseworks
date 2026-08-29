@@ -56,7 +56,10 @@ PERSONS = {'1': '1', '2': '2', '3': '3',
 TENSES = {'present': '1', 'imperfect': '2', 'future': '3', 'aorist': '4',
           'perfect': '5'}
 VOICES = {'active': '1', 'middle': '2', 'passive': '3',
-          'middle/passive': '4', 'dep': '5', 'deponent': '5'}
+          # The export writes ambiguous values as "X or Y"; the app's
+          # dropdown spells the same thing with a slash.
+          'middle/passive': '4', 'middle or passive': '4',
+          'dep': '5', 'deponent': '5'}
 MOODS = {'indicative': '1', 'participle': '2', 'imperative': '3',
          'optative': '4', 'infinitive': '5'}
 
