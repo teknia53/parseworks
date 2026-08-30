@@ -640,6 +640,7 @@
     <p><strong>[Audio hint]</strong> displays a small play bar in the middle of the window. These are the types of helps I give my traditional students when they are stuck. Click the button again to remove the hint. As with the text hint, the button is greyed out for a word with no recording.</p>
     <p><strong>[Confirm]</strong> sees if your answer is correct. As far as lexical forms are concerned, ParseWorks first checks your entry including breathing and accents. If that is not correct, it checks your entry against the answer without accents. Breathings are essential. ἀκουω will not register as the same as ακουω.</p>
     <p>If you cannot type in Greek at all, you may type the letters you would press on a Greek keyboard instead — click <strong>(help)</strong> beside the lexical form for the list. Either way, when your entry is accepted but not spelled letter for letter, ParseWorks shows you the accented form afterwards.</p>
+    <p>The <strong>gloss</strong> never decides whether an answer is right — the lexical form and the parsing do. It is compared all the same, loosely enough that &ldquo;I look&rdquo; passes for &ldquo;I am looking&rdquo;, and if it reads as a different meaning I show you mine. English says a thing many ways, so treat that as a comparison rather than a correction.</p>
     <p><strong>[I give up]</strong> shows the correct answer. Please do not use this unless you have tried hard to figure the answer out on your own.</p>
   </div>
 </div>
@@ -904,6 +905,71 @@ function fromKeyboardLetters(text) {
     : null;
 }
 
+// ---- comparing a student's gloss with the stored one --------------------
+// English says the same thing many ways, so compare the meaning-bearing
+// words with their endings knocked off, and ignore everything that only
+// carries tense, aspect or person — the parsing already tests those.
+// It cannot know synonyms, which is why a gloss never fails an answer.
+
+const GLOSS_AUX = new Set(['am','is','are','was','were','will','shall','be',
+  'being','been','do','does','did','to','have','has','had','let','us','may',
+  'must','would','of','a','an','the','after','while','all','one','those',
+  'who','that','it','he','she','they','you','i','we','him','her','them',
+  'me','my','your','their','his','its','our']);
+
+const GLOSS_IRREGULAR = {
+  heard: 'hear', said: 'say', saw: 'see', seen: 'see', went: 'go', gone: 'go',
+  came: 'come', taken: 'take', took: 'take', gave: 'give', given: 'give',
+  knew: 'know', known: 'know', threw: 'throw', thrown: 'throw',
+  wrote: 'write', written: 'write', spoke: 'speak', spoken: 'speak',
+  begot: 'beget', begotten: 'beget', became: 'become', born: 'bear',
+  taught: 'teach', brought: 'bring', sent: 'send', made: 'make',
+};
+
+function glossStem(word) {
+  if (GLOSS_IRREGULAR[word]) return GLOSS_IRREGULAR[word];
+  for (const suffix of ['ing', 'ed', 'es', 's']) {
+    // Two letters is enough of a base: "going" must reach "go", or a
+    // student writing "I go" is told their meaning differs.
+    if (word.endsWith(suffix) && word.length - suffix.length >= 2) {
+      word = word.slice(0, -suffix.length);
+      break;
+    }
+  }
+  // Collapse a doubled final consonant whether or not a suffix came off, so
+  // "fill" and "filling" meet at the same place, as do "run" and "running".
+  if (word.length > 2 && word.at(-1) === word.at(-2) &&
+      !'aeiou'.includes(word.at(-1))) word = word.slice(0, -1);
+  // loose / looses / loosing all reach "loos"; testify / testified reach
+  // "testifi", so settle the y/i alternation too
+  return word.replace(/e+$/, '').replace(/y$/, 'i') || word;
+}
+
+function glossWords(text) {
+  const cleaned = (text || '').toLowerCase()
+    .replace(/\([^)]*\)/g, ' ')      // "(plural)" is a note, not meaning
+    .replace(/[^\w\s/]/g, ' ')
+    .replace(/\//g, ' ');
+  const out = new Set();
+  for (const word of cleaned.split(/\s+/)) {
+    if (!word || GLOSS_AUX.has(word)) continue;
+    const s = glossStem(word);
+    if (s) out.add(s);
+  }
+  return out;
+}
+
+// The answer's meaning-words must all be in the stored gloss. Not the other
+// way round: "coming/going" offers two renderings and either will do, and a
+// shorter answer is not a wrong one. This only ever raises a note, so it
+// leans towards letting a reasonable answer past.
+function glossLooksRight(answer, gloss) {
+  const a = glossWords(answer), g = glossWords(gloss);
+  if (!a.size || !g.size) return true;     // nothing to judge
+  for (const w of a) if (!g.has(w)) return false;
+  return true;
+}
+
 function stripAccents(str) {
   // Normalize to NFD, remove combining acute/grave/circumflex/iota subscript but keep breathing
   return str.normalize('NFD').replace(/[́̀͂ͅ]/g, '').normalize('NFC');
@@ -936,12 +1002,15 @@ function confirmAnswer() {
 
   // Check gloss (case-insensitive, generous). An ambiguous form has a gloss
   // per reading — "I was asking" and "they were asking" — so accept any.
-  let glossCorrect = parsings(w).some(r => {
-    const g = (r.GLOSS || '').toLowerCase().trim();
-    return glossInput === g || glossInput.includes(g) || g.includes(glossInput);
-  });
-  // also allow if glossInput is non-empty and roughly matches
-  if (glossInput.length === 0) glossCorrect = null; // not checked if empty
+  // Checked but never fatal: the answer turns on the lexical form and the
+  // parsing. A gloss that looks off is mentioned, since English has more
+  // ways to say a thing than the data can hold.
+  const glossReadings = parsings(w).filter(r => r.GLOSS);
+  const glossGiven = glossInput.length > 0;
+  const glossCorrect = !glossGiven ||
+    glossReadings.some(r => glossLooksRight(glossInput, r.GLOSS));
+  const glossExpected = (!glossCorrect && glossReadings.length)
+    ? glossReadings[0].GLOSS : null;
 
   // Check parsing against every acceptable reading. An ambiguous form such
   // as ἐπηρώτων (first singular or third plural) counts as correct on any
@@ -979,6 +1048,9 @@ function confirmAnswer() {
     fb.innerHTML = '<span class="feedback-correct">✓ Correct!</span>' +
       (accentedForm
         ? `<span class="feedback-note"> Written out, it is <span class="greek-note">${accentedForm}</span>.</span>`
+        : '') +
+      (glossExpected
+        ? `<span class="feedback-note"> For the gloss I have &ldquo;${glossExpected}&rdquo;.</span>`
         : '') +
       (others.length ? `<span class="feedback-note"> Also parses as ${others.join('; ')}.</span>` : '');
   } else if (lexCorrect && allParseCorrect) {
