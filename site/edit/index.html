@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ParseWorks Editor</title>
+<style>
+  :root {
+    --blue: #2563eb;
+    --blue-dark: #1d4ed8;
+    --amber: #f59e0b;
+    --amber-dark: #b45309;
+    --green: #059669;
+    --red: #dc2626;
+    --ink: #111827;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --bg: #f9fafb;
+    --panel: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .brand { font-weight: 700; font-size: 17px; color: var(--blue); }
+  .brand span { color: var(--muted); font-weight: 400; }
+
+  header label { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+
+  select, input[type=text] {
+    font: inherit;
+    padding: 6px 9px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+  }
+  select:focus, input:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+  .grow { flex: 1; }
+
+  .count { color: var(--muted); font-size: 13px; }
+
+  .unsaved {
+    background: #fef3c7;
+    color: var(--amber-dark);
+    border: 1px solid #fcd34d;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--panel);
+          border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  th {
+    text-align: left; font-size: 12px; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--muted); font-weight: 600;
+    padding: 9px 12px; border-bottom: 1px solid var(--line); background: #f3f4f6;
+  }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  tr.editing td { background: #eff6ff; }
+  tbody tr:hover td { background: #f8fafc; }
+  tr.editing:hover td { background: #eff6ff; }
+
+  .num { color: var(--muted); font-variant-numeric: tabular-nums; width: 34px; }
+
+  .greek { font-family: "Gentium Plus", "Palatino Linotype", Palatino, Georgia, serif;
+           font-size: 20px; }
+
+  /* the app's own morpheme colours, so the editor shows what students see */
+  .greekStemVowel       { color: #2563eb; font-weight: 600; }
+  .greekCaseEnding      { color: #dc2626; font-weight: 600; }
+  .greekConnectingVowel { color: #7c3aed; font-weight: 600; }
+  .greekPersonalEnding  { color: #dc2626; font-weight: 600; }
+  .greekTenseFormative  { color: #d97706; font-weight: 600; }
+  .greekAugment         { color: #059669; font-weight: 600; }
+  .greekReduplication   { color: #0891b2; font-weight: 600; }
+  .greekMorpheme        { color: #6d28d9; font-weight: 600; }
+
+  .btn {
+    font: inherit; padding: 6px 12px; border: 1px solid transparent;
+    border-radius: 6px; cursor: pointer; background: var(--blue); color: #fff;
+  }
+  .btn:hover { background: var(--blue-dark); }
+  .btn.ghost { background: #fff; color: var(--ink); border-color: #cbd5e1; }
+  .btn.ghost:hover { background: #f1f5f9; }
+  .btn:disabled { background: #d1d5db; color: #6b7280; cursor: not-allowed; }
+  .btn.small { padding: 4px 9px; font-size: 13px; }
+
+  .audio-link { color: var(--blue); cursor: pointer; font-size: 13px;
+                font-family: ui-monospace, Menlo, monospace; background: none;
+                border: 0; padding: 0; text-decoration: underline; }
+  .audio-link:hover { color: var(--blue-dark); }
+  .audio-none { color: var(--muted); font-size: 13px; font-style: italic; }
+  .audio-bad { color: var(--red); font-size: 12px; }
+
+  .flag { color: var(--red); font-size: 12px; font-weight: 600; }
+
+  /* ---- editor panel ---- */
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 18px; margin-top: 18px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .panel h2 { margin: 0; font-size: 16px; }
+  .panel h2 .greek { font-size: 24px; margin-left: 6px; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field > span { font-size: 12px; text-transform: uppercase; letter-spacing: .05em;
+                  color: var(--muted); font-weight: 600; }
+  .field input { width: 100%; }
+
+  .letters {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    padding: 14px; background: #f8fafc; border: 1px solid var(--line);
+    border-radius: 8px; user-select: none;
+  }
+  .letter {
+    font-family: "Gentium Plus", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 30px; line-height: 1.1;
+    padding: 4px 7px; border-radius: 6px; cursor: pointer;
+    border: 2px solid transparent; background: #fff;
+  }
+  .letter.sel { border-color: var(--blue); background: #dbeafe; }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+  .swatch {
+    font: inherit; font-size: 13px; padding: 6px 11px; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 6px; background: #fff;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .swatch:hover { border-color: #94a3b8; }
+  .swatch:disabled { opacity: .45; cursor: not-allowed; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+
+  .preview {
+    padding: 14px; border: 1px dashed var(--amber); border-radius: 8px;
+    background: #fffbeb; text-align: center;
+  }
+  .preview .greek { font-size: 32px; }
+
+  .markup {
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+    color: var(--muted); word-break: break-all; background: #f8fafc;
+    border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px;
+  }
+
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .hint { font-size: 13px; color: var(--muted); }
+
+  .warn {
+    background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+    border-radius: 6px; padding: 9px 12px; font-size: 13px;
+  }
+
+  .loading, .error { padding: 40px; text-align: center; color: var(--muted); }
+  .error { color: var(--red); }
+
+  dialog { border: 1px solid var(--line); border-radius: 10px; padding: 0; max-width: 680px; width: 92vw; }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  .dlg { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .dlg textarea {
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+    width: 100%; height: 300px; border: 1px solid var(--line);
+    border-radius: 6px; padding: 10px; resize: vertical;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">ParseWorks <span>editor</span></div>
+  <label>Track
+    <select id="track">
+      <option value="1">Track 1</option>
+      <option value="2">Track 2</option>
+    </select>
+  </label>
+  <label>Chapter <select id="chapter"></select></label>
+  <span class="count" id="count"></span>
+  <span class="grow"></span>
+  <span class="unsaved" id="unsaved" hidden></span>
+  <button class="btn ghost" id="revert" disabled>Revert all</button>
+  <button class="btn" id="export" disabled>Export changes</button>
+</header>
+
+<main>
+  <div id="body" class="loading">Loading the word list from the app&hellip;</div>
+</main>
+
+<dialog id="exportDlg">
+  <div class="dlg">
+    <h2 style="margin:0">Changed rows</h2>
+    <p style="margin:0;font-size:13px;color:var(--muted)">
+      Each entry gives a track, chapter and inflected form, plus whatever changed.
+      Save the file or copy the text, and hand it back to be merged into the app.
+    </p>
+    <textarea id="exportText" readonly></textarea>
+    <div class="row">
+      <button class="btn" id="download">Save as file</button>
+      <button class="btn ghost" id="copy">Copy to clipboard</button>
+      <span class="grow"></span>
+      <button class="btn ghost" id="closeDlg">Close</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+const AUDIO_BASE = 'https://greek.billmounce.com/';
+
+// The classes the app paints morphemes with, in the order they tend to
+// appear in a word, each with the colour its stylesheet gives it.
+const MORPHEMES = [
+  { cls: 'greekReduplication',   label: 'Reduplication',    color: '#0891b2' },
+  { cls: 'greekAugment',         label: 'Augment',          color: '#059669' },
+  { cls: 'greekStemVowel',       label: 'Stem vowel',       color: '#2563eb' },
+  { cls: 'greekTenseFormative',  label: 'Tense formative',  color: '#d97706' },
+  { cls: 'greekConnectingVowel', label: 'Connecting vowel', color: '#7c3aed' },
+  { cls: 'greekMorpheme',        label: 'Morpheme',         color: '#6d28d9' },
+  { cls: 'greekCaseEnding',      label: 'Case ending',      color: '#dc2626' },
+  { cls: 'greekPersonalEnding',  label: 'Personal ending',  color: '#dc2626' },
+];
+
+let ALL = [];            // every row, as the app holds them
+let edits = new Map();   // key -> { INFLECTED?, TEXTHINT?, AUDIOHINT? }
+let current = null;      // the row open in the panel
+let letters = [];        // [{ ch, cls }] for the row being edited
+let anchor = null;       // where a letter selection started
+
+const key = r => `${r.TRACK}|${r.CHAPTER}|${r.SEQUENCE}`;
+const $ = id => document.getElementById(id);
+
+// ---------- loading ----------
+
+async function load() {
+  // The app is the single source of truth; read its data rather than
+  // keeping a second copy here that could drift.
+  const res = await fetch('../index.html', { cache: 'no-store' });
+  if (!res.ok) throw new Error(`the app returned ${res.status}`);
+  const html = await res.text();
+  const m = html.match(/const ALL_DATA = (\[[\s\S]*?\]);\n/);
+  if (!m) throw new Error('could not find the word list inside the app');
+  ALL = JSON.parse(m[1]);
+}
+
+// ---------- values, edited or original ----------
+
+function val(row, field) {
+  const e = edits.get(key(row));
+  return e && field in e ? e[field] : row[field];
+}
+
+function setVal(row, field, value) {
+  const k = key(row);
+  const e = edits.get(k) || {};
+  if (value === row[field]) delete e[field];
+  else e[field] = value;
+  if (Object.keys(e).length) edits.set(k, e); else edits.delete(k);
+  refreshHeader();
+}
+
+function refreshHeader() {
+  const n = edits.size;
+  $('unsaved').hidden = n === 0;
+  $('unsaved').textContent = n === 1 ? '1 row changed' : `${n} rows changed`;
+  $('export').disabled = n === 0;
+  $('revert').disabled = n === 0;
+}
+
+// ---------- audio ----------
+
+function audioUrl(file) {
+  const chapter = parseInt(file, 10);
+  if (!chapter) return null;
+  return AUDIO_BASE + 'chpt' + String(chapter).padStart(2, '0') + '/hints/' + file;
+}
+
+// ---------- text hint <-> letters ----------
+
+// Split a hint into one entry per character, carrying the class of the span
+// it sits in. Returns null if the hint does not spell the word, which is how
+// a hint left over from another word is caught.
+function hintToLetters(html, word) {
+  const out = [];
+  const re = /<span class=(\w+)>([^<]*)<\/span>|([^<]+)/g;
+  let m;
+  while ((m = re.exec(html || '')) !== null) {
+    const cls = m[1] || null;
+    for (const ch of (m[2] !== undefined ? m[2] : m[3])) out.push({ ch, cls });
+  }
+  return out.map(l => l.ch).join('') === word ? out : null;
+}
+
+// Rebuild the hint, joining runs of the same class into one span.
+function lettersToHint(ls) {
+  let html = '', i = 0;
+  while (i < ls.length) {
+    const cls = ls[i].cls;
+    let j = i;
+    while (j < ls.length && ls[j].cls === cls) j++;
+    const text = ls.slice(i, j).map(l => l.ch).join('');
+    html += cls ? `<span class=${cls}>${text}</span>` : text;
+    i = j;
+  }
+  return html;
+}
+
+// ---------- table ----------
+
+function chaptersFor(track) {
+  return [...new Set(ALL.filter(r => r.TRACK === track).map(r => +r.CHAPTER))]
+    .sort((a, b) => a - b);
+}
+
+function rowsFor(track, chapter) {
+  return ALL.filter(r => r.TRACK === track && r.CHAPTER === chapter)
+            .sort((a, b) => +a.ORDERINCHAPTER - +b.ORDERINCHAPTER);
+}
+
+function renderTable() {
+  const track = $('track').value;
+  const chapter = $('chapter').value;
+  const rows = rowsFor(track, chapter);
+  $('count').textContent = rows.length === 1 ? '1 word' : `${rows.length} words`;
+
+  const table = document.createElement('table');
+  table.innerHTML = `<thead><tr>
+      <th class="num">#</th><th>Inflected</th><th>Text hint</th>
+      <th>Audio</th><th></th></tr></thead>`;
+  const tbody = document.createElement('tbody');
+
+  for (const r of rows) {
+    const word = val(r, 'INFLECTED');
+    const hint = val(r, 'TEXTHINT');
+    const file = val(r, 'AUDIOHINT');
+    const tr = document.createElement('tr');
+    if (current && key(current) === key(r)) tr.className = 'editing';
+
+    const mismatch = hint && !hintToLetters(hint, word);
+
+    tr.innerHTML = `
+      <td class="num">${+r.ORDERINCHAPTER + 1}</td>
+      <td class="greek">${escapeHtml(word)}</td>
+      <td>${hint
+            ? `<span class="greek">${hint}</span>` +
+              (mismatch ? ` <span class="flag">shows a different word</span>` : '')
+            : `<span class="audio-none">none</span>`}</td>
+      <td></td>
+      <td><button class="btn ghost small">Edit</button></td>`;
+
+    const audioCell = tr.children[3];
+    if (file) {
+      const b = document.createElement('button');
+      b.className = 'audio-link';
+      b.textContent = file;
+      b.title = audioUrl(file);
+      b.onclick = () => play(file, audioCell);
+      audioCell.appendChild(b);
+    } else {
+      audioCell.innerHTML = '<span class="audio-none">none</span>';
+    }
+
+    tr.querySelector('.btn').onclick = () => openEditor(r);
+    tbody.appendChild(tr);
+  }
+
+  table.appendChild(tbody);
+  const host = $('body');
+  host.className = '';
+  host.replaceChildren(table);
+  if (current && rows.some(r => key(r) === key(current))) host.appendChild(buildPanel());
+}
+
+function play(file, cell) {
+  cell.querySelectorAll('audio').forEach(a => a.remove());
+  const a = document.createElement('audio');
+  a.controls = true; a.autoplay = true; a.src = audioUrl(file);
+  a.style.cssText = 'display:block;margin-top:6px;height:32px;max-width:230px';
+  a.onerror = () => {
+    const e = document.createElement('div');
+    e.className = 'audio-bad';
+    e.textContent = 'That recording did not load.';
+    a.replaceWith(e);
+  };
+  cell.appendChild(a);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+// ---------- editor panel ----------
+
+function openEditor(row) {
+  current = row;
+  const word = val(row, 'INFLECTED');
+  const existing = hintToLetters(val(row, 'TEXTHINT'), word);
+  // Letters always come from the word, so a hint can never spell something
+  // else. An old hint's colours carry over only when it spelled this word.
+  letters = existing || [...word].map(ch => ({ ch, cls: null }));
+  anchor = null;
+  renderTable();
+  document.querySelector('.panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function buildPanel() {
+  const row = current;
+  const word = val(row, 'INFLECTED');
+  const hadMismatch = val(row, 'TEXTHINT') && !hintToLetters(val(row, 'TEXTHINT'), word);
+
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+
+  const head = document.createElement('h2');
+  head.innerHTML = `Word ${+row.ORDERINCHAPTER + 1}<span class="greek">${escapeHtml(word)}</span>`;
+  panel.appendChild(head);
+
+  if (hadMismatch) {
+    const w = document.createElement('div');
+    w.className = 'warn';
+    w.textContent = 'The stored hint spelled a different word, so its colours '
+      + 'were not carried over. Colour the letters below and the hint is rebuilt '
+      + 'from this word.';
+    panel.appendChild(w);
+  }
+
+  // inflected form
+  const f1 = document.createElement('label');
+  f1.className = 'field';
+  f1.innerHTML = '<span>Inflected form</span>';
+  const i1 = document.createElement('input');
+  i1.type = 'text'; i1.className = 'greek'; i1.value = word;
+  i1.onchange = () => {
+    setVal(row, 'INFLECTED', i1.value.trim());
+    openEditor(row);
+  };
+  f1.appendChild(i1);
+  panel.appendChild(f1);
+
+  // letters
+  const lab = document.createElement('div');
+  lab.className = 'field';
+  lab.innerHTML = '<span>Text hint &mdash; click a letter, drag or shift-click for a run</span>';
+  const grid = document.createElement('div');
+  grid.className = 'letters';
+  letters.forEach((l, i) => {
+    const b = document.createElement('div');
+    b.className = 'letter' + (l.sel ? ' sel' : '');
+    b.textContent = l.ch;
+    if (l.cls) b.classList.add(l.cls);
+    b.onmousedown = e => { e.preventDefault(); startSelect(i, e.shiftKey); };
+    b.onmouseenter = e => { if (e.buttons === 1) extendSelect(i); };
+    grid.appendChild(b);
+  });
+  lab.appendChild(grid);
+  panel.appendChild(lab);
+
+  // morpheme buttons
+  const sw = document.createElement('div');
+  sw.className = 'swatches';
+  const anySel = letters.some(l => l.sel);
+  for (const m of MORPHEMES) {
+    const b = document.createElement('button');
+    b.className = 'swatch';
+    b.disabled = !anySel;
+    b.innerHTML = `<span class="dot" style="background:${m.color}"></span>${m.label}`;
+    b.onclick = () => applyClass(m.cls);
+    sw.appendChild(b);
+  }
+  const clear = document.createElement('button');
+  clear.className = 'swatch';
+  clear.disabled = !anySel;
+  clear.innerHTML = '<span class="dot" style="background:#111827"></span>Plain (stem)';
+  clear.onclick = () => applyClass(null);
+  sw.appendChild(clear);
+  panel.appendChild(sw);
+
+  // preview and markup
+  const html = lettersToHint(letters);
+  const prev = document.createElement('div');
+  prev.className = 'preview';
+  prev.innerHTML = `<span class="greek">${html}</span>`;
+  panel.appendChild(prev);
+
+  const mk = document.createElement('div');
+  mk.className = 'markup';
+  mk.textContent = html;
+  panel.appendChild(mk);
+
+  // audio
+  const f2 = document.createElement('label');
+  f2.className = 'field';
+  f2.innerHTML = '<span>Audio file</span>';
+  const i2 = document.createElement('input');
+  i2.type = 'text';
+  i2.value = val(row, 'AUDIOHINT') || '';
+  i2.placeholder = 'e.g. 24.9-P.mp3, or leave empty for no recording';
+  i2.onchange = () => { setVal(row, 'AUDIOHINT', i2.value.trim() || null); renderTable(); };
+  f2.appendChild(i2);
+  const u = document.createElement('div');
+  u.className = 'hint';
+  const file = val(row, 'AUDIOHINT');
+  u.textContent = file ? audioUrl(file) : 'No recording for this word.';
+  f2.appendChild(u);
+  panel.appendChild(f2);
+
+  // actions
+  const acts = document.createElement('div');
+  acts.className = 'row';
+  const save = document.createElement('button');
+  save.className = 'btn';
+  save.textContent = 'Apply to this word';
+  save.onclick = () => {
+    setVal(row, 'TEXTHINT', lettersToHint(letters) || null);
+    current = null;
+    renderTable();
+  };
+  const cancel = document.createElement('button');
+  cancel.className = 'btn ghost';
+  cancel.textContent = 'Close';
+  cancel.onclick = () => { current = null; renderTable(); };
+  const reset = document.createElement('button');
+  reset.className = 'btn ghost';
+  reset.textContent = 'Revert this word';
+  reset.disabled = !edits.has(key(row));
+  reset.onclick = () => { edits.delete(key(row)); refreshHeader(); openEditor(row); };
+  acts.append(save, cancel, reset);
+  panel.appendChild(acts);
+
+  return panel;
+}
+
+function startSelect(i, extend) {
+  if (extend && anchor !== null) return extendSelect(i);
+  anchor = i;
+  letters.forEach((l, j) => l.sel = j === i);
+  renderTable();
+}
+
+function extendSelect(i) {
+  if (anchor === null) return;
+  const [a, b] = anchor < i ? [anchor, i] : [i, anchor];
+  letters.forEach((l, j) => l.sel = j >= a && j <= b);
+  renderTable();
+}
+
+function applyClass(cls) {
+  letters.forEach(l => { if (l.sel) l.cls = cls; });
+  renderTable();
+}
+
+// ---------- export ----------
+
+function buildExport() {
+  const out = [];
+  for (const [k, e] of edits) {
+    const row = ALL.find(r => key(r) === k);
+    const entry = { track: row.TRACK, chapter: row.CHAPTER,
+                    sequence: row.SEQUENCE, word: row.INFLECTED };
+    if ('INFLECTED' in e) entry.inflected = e.INFLECTED;
+    if ('TEXTHINT' in e) entry.textHint = e.TEXTHINT;
+    if ('AUDIOHINT' in e) entry.audio = e.AUDIOHINT;
+    out.push(entry);
+  }
+  out.sort((a, b) => a.track.localeCompare(b.track) ||
+                     +a.chapter - +b.chapter || +a.sequence - +b.sequence);
+  return JSON.stringify(out, null, 2);
+}
+
+// ---------- wiring ----------
+
+function fillChapters() {
+  const track = $('track').value;
+  const sel = $('chapter');
+  const keep = sel.value;
+  sel.innerHTML = chaptersFor(track)
+    .map(c => `<option value="${c}">Chapter ${c}</option>`).join('');
+  if ([...sel.options].some(o => o.value === keep)) sel.value = keep;
+  current = null;
+  renderTable();
+}
+
+$('track').onchange = fillChapters;
+$('chapter').onchange = () => { current = null; renderTable(); };
+
+$('export').onclick = () => {
+  $('exportText').value = buildExport();
+  $('exportDlg').showModal();
+};
+$('closeDlg').onclick = () => $('exportDlg').close();
+$('copy').onclick = async () => {
+  await navigator.clipboard.writeText($('exportText').value);
+  $('copy').textContent = 'Copied';
+  setTimeout(() => ($('copy').textContent = 'Copy to clipboard'), 1500);
+};
+$('download').onclick = () => {
+  const blob = new Blob([$('exportText').value], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'parseworks-edits.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+$('revert').onclick = () => {
+  if (!confirm(`Discard all ${edits.size} changed rows?`)) return;
+  edits.clear(); current = null; refreshHeader(); renderTable();
+};
+
+addEventListener('beforeunload', e => {
+  if (edits.size) { e.preventDefault(); e.returnValue = ''; }
+});
+
+load().then(() => {
+  fillChapters();
+  refreshHeader();
+}).catch(err => {
+  const host = $('body');
+  host.className = 'error';
+  host.textContent = `Could not load the word list: ${err.message}`;
+});
+</script>
+</body>
+</html>
