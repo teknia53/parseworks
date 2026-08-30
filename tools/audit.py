@@ -37,6 +37,12 @@ def expand_iota(text):
         'NFC', unicodedata.normalize('NFD', text).replace('ͅ', 'ι'))
 
 
+def drop_iota(text):
+    """The same word with the iota subscript lost rather than written out."""
+    return unicodedata.normalize(
+        'NFC', unicodedata.normalize('NFD', text).replace('ͅ', ''))
+
+
 def bare(text):
     """Letters only, so two spellings can be compared apart from accents."""
     d = unicodedata.normalize('NFD', text).replace('ͅ', 'ι')
@@ -53,7 +59,7 @@ def audit(data):
     findings = collections.OrderedDict()
 
     # --- text hints -------------------------------------------------------
-    wrong_word, accents, malformed = [], [], []
+    wrong_word, accents, malformed, lost_iota = [], [], [], []
     for d in data:
         hint = d['TEXTHINT']
         if not hint:
@@ -64,16 +70,31 @@ def audit(data):
         if opens != closes or re.search(r'<span[^>]*<', hint) \
                 or re.search(r'<(?!/?span)', hint):
             malformed.append({'at': where(d), 'word': word, 'markup': hint})
+        # A hint spelling the word, or the word with its iota subscript
+        # written out as a full iota, is correct — Bill pulls the iota out
+        # on purpose, to show that the dative ending is an iota.
         if shown in (word, expand_iota(word)):
             continue
         entry = {'at': where(d), 'word': word, 'shows': shown}
-        (accents if bare(shown) == bare(word) else wrong_word).append(entry)
+        if shown == drop_iota(word):
+            # Not a different word: the iota was lost rather than written out.
+            entry['want'] = expand_iota(word)
+            lost_iota.append(entry)
+        elif bare(shown) == bare(word):
+            accents.append(entry)
+        else:
+            wrong_word.append(entry)
 
     findings['text hint shows a different word'] = {
         'why': 'A student pressing Text Hint sees another word broken into '
                'morphemes. Not recoverable from the data; needs the correct '
                'split, which a bulleted export would carry.',
         'rows': wrong_word,
+    }
+    findings['text hint lost an iota subscript'] = {
+        'why': 'The word has an iota subscript that the hint neither keeps '
+               'nor writes out as a full iota. Not a different word.',
+        'rows': lost_iota,
     }
     findings['text hint differs by an accent or breathing'] = {
         'why': 'The morpheme split looks right but the letters lost a mark. '
