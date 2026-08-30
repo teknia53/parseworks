@@ -243,6 +243,11 @@
 <script>
 const AUDIO_BASE = 'https://greek.billmounce.com/';
 
+// Where the app lives, worked out from this page's own address rather than
+// with a relative path: at /pw/edit, without the trailing slash, "../" means
+// the site root and the word list is fetched from the wrong place entirely.
+const APP_ROOT = location.pathname.replace(/\/edit\/?$/, '') + '/';
+
 // The classes the app paints morphemes with, in the order they tend to
 // appear in a word, each with the colour its stylesheet gives it.
 const MORPHEMES = [
@@ -271,7 +276,7 @@ const $ = id => document.getElementById(id);
 async function load() {
   // The app is the single source of truth; read its data rather than
   // keeping a second copy here that could drift.
-  const res = await fetch('../index.html', { cache: 'no-store' });
+  const res = await fetch(APP_ROOT + 'index.html', { cache: 'no-store' });
   if (!res.ok) throw new Error(`the app returned ${res.status}`);
   const html = await res.text();
   const m = html.match(/const ALL_DATA = (\[[\s\S]*?\]);\n/);
@@ -289,7 +294,7 @@ async function load() {
   // Then lay saved edits over it, so the editor opens on what is live
   // rather than on what the app was last built with.
   try {
-    const r = await fetch('../api/overrides', { cache: 'no-store' });
+    const r = await fetch(APP_ROOT + 'api/overrides', { cache: 'no-store' });
     if (r.ok) {
       const { overrides } = await r.json();
       const bySeq = new Map(ALL.map(row => [row.SEQUENCE, row]));
@@ -699,7 +704,7 @@ async function save() {
   $('save').disabled = true;
   note('Saving…');
   try {
-    const res = await fetch('../api/overrides', {
+    const res = await fetch(APP_ROOT + 'api/overrides', {
       method: 'POST',
       headers: { 'content-type': 'application/json',
                  'authorization': `Bearer ${token}` },
