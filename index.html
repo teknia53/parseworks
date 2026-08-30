@@ -334,7 +334,9 @@
   }
   .feedback-correct { color: var(--correct); }
   .feedback-incorrect { color: var(--incorrect); }
-  .feedback-note { color: var(--muted, #666); font-weight: normal; }
+  .feedback-note { color: var(--text-light); font-weight: normal; }
+  .greek-note { font-family: 'Gentium Plus', Palatino, Georgia, serif;
+                font-size: 1.15em; color: var(--text); }
   .feedback-giveup { color: #6b7280; font-style: italic; }
 
   /* ── BOTTOM BUTTONS ── */
@@ -923,7 +925,12 @@ function confirmAnswer() {
              && typed.breathing === breathingOf(r.LEXICAL)) ||
     (!!r.TRANSLITERATION &&
      lexInput.toLowerCase() === r.TRANSLITERATION.toLowerCase());
-  let lexCorrect = parsings(w).some(lexMatches);
+  const lexReading = parsings(w).find(lexMatches);
+  let lexCorrect = !!lexReading;
+  // Accepted, but not letter for letter. Worth showing the accented spelling
+  // afterwards; the answer counts either way.
+  const accentedForm = (lexCorrect && lexInput !== lexReading.LEXICAL)
+    ? lexReading.LEXICAL : null;
 
   // Check gloss (case-insensitive, generous). An ambiguous form has a gloss
   // per reading — "I was asking" and "they were asking" — so accept any.
@@ -968,6 +975,9 @@ function confirmAnswer() {
     // Worth knowing the form was ambiguous even when the answer was right.
     const others = readings.filter(r => r !== best).map(r => describeReading(r, w));
     fb.innerHTML = '<span class="feedback-correct">✓ Correct!</span>' +
+      (accentedForm
+        ? `<span class="feedback-note"> Written out, it is <span class="greek-note">${accentedForm}</span>.</span>`
+        : '') +
       (others.length ? `<span class="feedback-note"> Also parses as ${others.join('; ')}.</span>` : '');
   } else if (lexCorrect && allParseCorrect) {
     // Both halves are right, but of different readings of the word.
