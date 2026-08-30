@@ -336,17 +336,18 @@
   .feedback-giveup { color: #6b7280; font-style: italic; }
 
   /* ── BOTTOM BUTTONS ── */
+  /* Sits in the flow just under the parsing options, as a card matching
+     them, rather than pinned to the bottom of the window. */
   #bottomBar {
     background: white;
-    border-top: 1px solid var(--border);
-    padding: 14px 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 14px;
     display: flex;
     justify-content: center;
     gap: 10px;
     flex-wrap: wrap;
-    position: sticky;
-    bottom: 0;
-    box-shadow: 0 -2px 6px rgba(0,0,0,0.06);
   }
 
   .btn {
@@ -601,19 +602,19 @@
   </div>
 
   <!-- FEEDBACK -->
+  <!-- ACTIONS — directly under the parsing options -->
+  <div id="bottomBar">
+    <button class="btn btn-prev" onclick="prevWord()">Previous word</button>
+    <button class="btn btn-hint" id="textHintBtn" onclick="toggleTextHint()">Text Hint</button>
+    <button class="btn btn-hint" id="audioHintBtn" onclick="toggleAudioHint()">Audio Hint</button>
+    <button class="btn btn-confirm" onclick="confirmAnswer()">Confirm</button>
+    <button class="btn btn-giveup" onclick="giveUp()">I give up</button>
+    <button class="btn btn-next" onclick="nextWord()">Next word</button>
+  </div>
+
   <div id="feedbackArea"></div>
 
 </div><!-- /main -->
-
-<!-- BOTTOM BAR -->
-<div id="bottomBar">
-  <button class="btn btn-prev" onclick="prevWord()">Previous word</button>
-  <button class="btn btn-hint" id="textHintBtn" onclick="toggleTextHint()">Text Hint</button>
-  <button class="btn btn-hint" id="audioHintBtn" onclick="toggleAudioHint()">Audio Hint</button>
-  <button class="btn btn-confirm" onclick="confirmAnswer()">Confirm</button>
-  <button class="btn btn-giveup" onclick="giveUp()">I give up</button>
-  <button class="btn btn-next" onclick="nextWord()">Next word</button>
-</div>
 
 <!-- HELP MODAL -->
 <div class="modal-overlay" id="helpModal" onclick="closeHelp(event)">
