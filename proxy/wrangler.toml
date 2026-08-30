@@ -11,3 +11,9 @@ routes = [
 
 [vars]
 PAGES_URL = "https://parseworks.pages.dev"
+
+# Edits from /pw/edit, as a patch layer over the word list in the app.
+[[d1_databases]]
+binding = "EDITS"
+database_name = "parseworks-edits"
+database_id = "69461230-2501-46ad-b32d-07ba93b01701"

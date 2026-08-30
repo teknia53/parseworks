@@ -12,3 +12,6 @@ untitled folder/
 
 # Local-only Claude Code settings
 .claude/settings.local.json
+
+# The editor's write token lives in ~/.parseworks-editor-token, never here
+.parseworks-editor-token

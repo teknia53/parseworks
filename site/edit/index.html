@@ -68,6 +68,16 @@
     font-size: 12px;
     font-weight: 600;
   }
+  .saved {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #86efac;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .saved.bad { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
 
   main { padding: 20px; max-width: 1100px; margin: 0 auto; }
 
@@ -203,8 +213,10 @@
   <span class="count" id="count"></span>
   <span class="grow"></span>
   <span class="unsaved" id="unsaved" hidden></span>
+  <span class="saved" id="saved" hidden></span>
   <button class="btn ghost" id="revert" disabled>Revert all</button>
-  <button class="btn" id="export" disabled>Export changes</button>
+  <button class="btn ghost" id="export" disabled>Export</button>
+  <button class="btn" id="save" disabled>Save</button>
 </header>
 
 <main>
@@ -246,6 +258,7 @@ const MORPHEMES = [
 
 let ALL = [];            // every row, as the app holds them
 let edits = new Map();   // key -> { INFLECTED?, TEXTHINT?, AUDIOHINT? }
+let stored = new Set();  // sequences the store already overrides
 let current = null;      // the row open in the panel
 let letters = [];        // [{ ch, cls }] for the row being edited
 let anchor = null;       // where a letter selection started
@@ -264,6 +277,28 @@ async function load() {
   const m = html.match(/const ALL_DATA = (\[[\s\S]*?\]);\n/);
   if (!m) throw new Error('could not find the word list inside the app');
   ALL = JSON.parse(m[1]);
+
+  // Remember what the app shipped with, before any override is laid on.
+  // That is the baseline a change is measured against: editing a word back
+  // to its shipped value must delete its override, not store a copy of it.
+  for (const row of ALL) {
+    row._shipped = { INFLECTED: row.INFLECTED, TEXTHINT: row.TEXTHINT,
+                     AUDIOHINT: row.AUDIOHINT };
+  }
+
+  // Then lay saved edits over it, so the editor opens on what is live
+  // rather than on what the app was last built with.
+  try {
+    const r = await fetch('../api/overrides', { cache: 'no-store' });
+    if (r.ok) {
+      const { overrides } = await r.json();
+      const bySeq = new Map(ALL.map(row => [row.SEQUENCE, row]));
+      for (const o of overrides) {
+        const row = bySeq.get(o.sequence);
+        if (row) { Object.assign(row, o.patch); stored.add(row.SEQUENCE); }
+      }
+    }
+  } catch { /* the app's own data is enough to work from */ }
 }
 
 // ---------- values, edited or original ----------
@@ -276,18 +311,30 @@ function val(row, field) {
 function setVal(row, field, value) {
   const k = key(row);
   const e = edits.get(k) || {};
-  if (value === row[field]) delete e[field];
+  // Measured against what the app shipped with, so a word edited back to
+  // its original ends up with no override rather than one that changes
+  // nothing — and its stored override is deleted on the next save.
+  if (value === row._shipped[field]) delete e[field];
   else e[field] = value;
-  if (Object.keys(e).length) edits.set(k, e); else edits.delete(k);
+  if (Object.keys(e).length || stored.has(row.SEQUENCE)) edits.set(k, e);
+  else edits.delete(k);
   refreshHeader();
 }
 
 function refreshHeader() {
   const n = edits.size;
   $('unsaved').hidden = n === 0;
-  $('unsaved').textContent = n === 1 ? '1 row changed' : `${n} rows changed`;
+  $('unsaved').textContent = n === 1 ? '1 row unsaved' : `${n} rows unsaved`;
   $('export').disabled = n === 0;
   $('revert').disabled = n === 0;
+  $('save').disabled = n === 0;
+}
+
+function note(text, bad) {
+  const el = $('saved');
+  el.hidden = !text;
+  el.textContent = text;
+  el.classList.toggle('bad', !!bad);
 }
 
 // ---------- audio ----------
@@ -570,7 +617,10 @@ function applyClass(cls) {
   letters.forEach(l => { if (l.sel) l.cls = cls; });
   // Stage it at once, the way the inflected form and audio fields do, so
   // the panel has one rule and closing it never loses work.
-  setVal(current, 'TEXTHINT', lettersToHint(letters) || null);
+  // With no morpheme marked the hint is just the word again, which teaches
+  // nothing, so that counts as having no hint rather than as a hint.
+  const html = lettersToHint(letters);
+  setVal(current, 'TEXTHINT', html.includes('<span') ? html : null);
   renderTable();
 }
 
@@ -607,6 +657,78 @@ function fillChapters() {
 
 $('track').onchange = fillChapters;
 $('chapter').onchange = () => { current = null; renderTable(); };
+
+// ---------- saving ----------
+
+// The token is what stops anyone who finds this page from editing the Greek.
+// Kept in this browser only; asked for once.
+function editorToken(force) {
+  let t = force ? null : localStorage.getItem('parseworks-editor-token');
+  if (!t) {
+    t = prompt('Editor token (saved in this browser, asked once):');
+    if (t) localStorage.setItem('parseworks-editor-token', t.trim());
+  }
+  return t && t.trim();
+}
+
+async function save() {
+  const token = editorToken(false);
+  if (!token) return;
+
+  const entries = [];
+  for (const [k, e] of edits) {
+    const row = ALL.find(r => key(r) === k);
+    // An empty patch means the word now matches what the app shipped with,
+    // so its override should go rather than be stored as a no-op.
+    entries.push(Object.keys(e).length
+      ? { sequence: row.SEQUENCE, word: val(row, 'INFLECTED'), patch: e }
+      : { sequence: row.SEQUENCE, word: row._shipped.INFLECTED, remove: true });
+  }
+
+  $('save').disabled = true;
+  note('Saving…');
+  try {
+    const res = await fetch('../api/overrides', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json',
+                 'authorization': `Bearer ${token}` },
+      body: JSON.stringify({ entries }),
+    });
+    const body = await res.json().catch(() => ({}));
+
+    if (res.status === 401) {
+      localStorage.removeItem('parseworks-editor-token');
+      note('That token was not accepted. Press Save to try again.', true);
+      refreshHeader();
+      return;
+    }
+    if (!res.ok) {
+      // The server refuses a batch whole, so nothing was saved.
+      note((body.problems || [body.error || `save failed (${res.status})`])
+             .join('; '), true);
+      refreshHeader();
+      return;
+    }
+
+    // Saved: fold the changes into the rows and stop tracking them.
+    for (const [k, e] of edits) {
+      const row = ALL.find(r => key(r) === k);
+      if (Object.keys(e).length) { Object.assign(row, e); stored.add(row.SEQUENCE); }
+      else { Object.assign(row, row._shipped); stored.delete(row.SEQUENCE); }
+    }
+    edits.clear();
+    refreshHeader();
+    const n = body.saved + (body.removed || 0);
+    note(n === 1 ? 'Saved 1 word' : `Saved ${n} words`);
+    setTimeout(() => note(''), 4000);
+    renderTable();
+  } catch (err) {
+    note(`Could not reach the server: ${err.message}`, true);
+    refreshHeader();
+  }
+}
+
+$('save').onclick = save;
 
 $('export').onclick = () => {
   $('exportText').value = buildExport();

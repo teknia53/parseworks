@@ -963,6 +963,24 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter') confirmAnswer();
 });
 
+// Words edited since the app was last built are held in a small store and
+// laid over ALL_DATA at load. Deliberately fire-and-forget: if the store is
+// slow or down the chapter is already on screen, and the words it would have
+// corrected are simply the ones the app shipped with.
+async function applySavedEdits() {
+  const res = await fetch('api/overrides', { cache: 'no-store' });
+  if (!res.ok) return 0;
+  const { overrides } = await res.json();
+  if (!overrides || !overrides.length) return 0;
+  const bySeq = new Map(ALL_DATA.map(r => [r.SEQUENCE, r]));
+  let n = 0;
+  for (const o of overrides) {
+    const row = bySeq.get(o.sequence);
+    if (row) { Object.assign(row, o.patch); n++; }
+  }
+  return n;
+}
+
 // Init — read URL params, default to chapter 6 track 1
 (function() {
   const params = new URLSearchParams(window.location.search);
@@ -989,6 +1007,12 @@ document.addEventListener('keydown', e => {
 
   sel.value = targetChapter;
   loadChapter();
+
+  // Then pick up any edits made since the build, and redraw the word on
+  // screen if it was one of them.
+  applySavedEdits().then(n => {
+    if (n && chapterLoaded) { loadChapter(); }
+  }).catch(() => { /* the built-in words stand */ });
 })();
 </script>
 </body>
