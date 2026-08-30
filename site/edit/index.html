@@ -347,6 +347,14 @@ function audioUrl(file) {
 
 // ---------- text hint <-> letters ----------
 
+// A hint writes an iota subscript out as a full iota — ἀγάπῃ is shown
+// ἀγάπηι — so that the iota can be coloured as the ending it is. The letter
+// grid therefore works on the written-out form, and a hint spelling it is
+// spelling its own word, not a different one.
+function expandIota(text) {
+  return text.normalize('NFD').replace(/ͅ/g, 'ι').normalize('NFC');
+}
+
 // Split a hint into one entry per character, carrying the class of the span
 // it sits in. Returns null if the hint does not spell the word, which is how
 // a hint left over from another word is caught.
@@ -358,7 +366,8 @@ function hintToLetters(html, word) {
     const cls = m[1] || null;
     for (const ch of (m[2] !== undefined ? m[2] : m[3])) out.push({ ch, cls });
   }
-  return out.map(l => l.ch).join('') === word ? out : null;
+  const spelled = out.map(l => l.ch).join('');
+  return (spelled === word || spelled === expandIota(word)) ? out : null;
 }
 
 // Rebuild the hint, joining runs of the same class into one span.
@@ -468,7 +477,9 @@ function openEditor(row) {
   const existing = hintToLetters(val(row, 'TEXTHINT'), word);
   // Letters always come from the word, so a hint can never spell something
   // else. An old hint's colours carry over only when it spelled this word.
-  letters = existing || [...word].map(ch => ({ ch, cls: null }));
+  // A word with an iota subscript is offered written out, since that is the
+  // only way its iota can be selected and coloured.
+  letters = existing || [...expandIota(word)].map(ch => ({ ch, cls: null }));
   anchor = null;
   renderTable();
   document.querySelector('.panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });

@@ -40,10 +40,17 @@ def plain(html):
     return unicodedata.normalize('NFC', re.sub(r'<[^>]+>', '', html or ''))
 
 
+def expand_iota(text):
+    """ἀγάπῃ as ἀγάπηι. A hint writes the iota subscript out so it can be
+    coloured as the ending it is; that is still the same word."""
+    return unicodedata.normalize(
+        'NFC', unicodedata.normalize('NFD', text).replace('ͅ', 'ι'))
+
+
 def check_hint(hint, word, where):
     """A hint must spell its word and name only classes the app styles."""
     problems = []
-    if plain(hint) != word:
+    if plain(hint) not in (word, expand_iota(word)):
         problems.append(f"spells {plain(hint)!r}, not {word!r}")
     unknown = set(re.findall(r'class=(\w+)', hint)) - VALID_CLASSES
     if unknown:
