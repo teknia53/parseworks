@@ -531,24 +531,22 @@ function buildPanel() {
   // actions
   const acts = document.createElement('div');
   acts.className = 'row';
-  const save = document.createElement('button');
-  save.className = 'btn';
-  save.textContent = 'Apply to this word';
-  save.onclick = () => {
-    setVal(row, 'TEXTHINT', lettersToHint(letters) || null);
-    current = null;
-    renderTable();
-  };
-  const cancel = document.createElement('button');
-  cancel.className = 'btn ghost';
-  cancel.textContent = 'Close';
-  cancel.onclick = () => { current = null; renderTable(); };
+  const done = document.createElement('button');
+  done.className = 'btn';
+  done.textContent = 'Done';
+  done.onclick = () => { current = null; renderTable(); };
   const reset = document.createElement('button');
   reset.className = 'btn ghost';
   reset.textContent = 'Revert this word';
   reset.disabled = !edits.has(key(row));
   reset.onclick = () => { edits.delete(key(row)); refreshHeader(); openEditor(row); };
-  acts.append(save, cancel, reset);
+  acts.append(done, reset);
+  const note = document.createElement('span');
+  note.className = 'hint';
+  note.textContent = edits.has(key(row))
+    ? 'Changed. Export when you have finished the chapter.'
+    : 'Changes are kept as you make them.';
+  acts.appendChild(note);
   panel.appendChild(acts);
 
   return panel;
@@ -570,6 +568,9 @@ function extendSelect(i) {
 
 function applyClass(cls) {
   letters.forEach(l => { if (l.sel) l.cls = cls; });
+  // Stage it at once, the way the inflected form and audio fields do, so
+  // the panel has one rule and closing it never loses work.
+  setVal(current, 'TEXTHINT', lettersToHint(letters) || null);
   renderTable();
 }
 
