@@ -455,16 +455,45 @@ function renderTable() {
   if (current && rows.some(r => key(r) === key(current))) host.appendChild(buildPanel());
 }
 
+// Why a recording would not play. "It did not load" is true of a missing
+// file, an empty one and a network fault alike, and they want different
+// things done about them — an empty file looks fine in the bucket.
+// Asked of our own server, not the bucket: the bucket sends no CORS
+// headers, so fetching a recording from this page fails identically
+// whether the file is missing, empty or perfectly fine.
+async function whyNoAudio(file) {
+  try {
+    const res = await fetch(`${APP_ROOT}api/audio?file=${encodeURIComponent(file)}`,
+                            { cache: 'no-store' });
+    const r = await res.json();
+    if (r.status === 403 || r.status === 404) {
+      return 'No file at that address. Check the name, and that it sits in '
+           + 'the chapter’s hints folder rather than beside it.';
+    }
+    if (r.status !== 200) return `The bucket answered ${r.status}.`;
+    if (r.bytes === 0) {
+      return 'The file is there but empty — 0 bytes. That usually means a '
+           + 'move created the name without carrying the audio across.';
+    }
+    return `The file is there (${Math.round(r.bytes / 1024)} KB) but would `
+         + 'not play. It may not be a valid MP3.';
+  } catch (err) {
+    return `Could not check the file: ${err.message}`;
+  }
+}
+
 function play(file, cell) {
-  cell.querySelectorAll('audio').forEach(a => a.remove());
+  cell.querySelectorAll('audio, .audio-bad').forEach(el => el.remove());
+  const url = audioUrl(file);
   const a = document.createElement('audio');
-  a.controls = true; a.autoplay = true; a.src = audioUrl(file);
+  a.controls = true; a.autoplay = true; a.src = url;
   a.style.cssText = 'display:block;margin-top:6px;height:32px;max-width:230px';
-  a.onerror = () => {
+  a.onerror = async () => {
     const e = document.createElement('div');
     e.className = 'audio-bad';
-    e.textContent = 'That recording did not load.';
+    e.textContent = 'Checking…';
     a.replaceWith(e);
+    e.textContent = await whyNoAudio(file);
   };
   cell.appendChild(a);
 }

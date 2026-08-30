@@ -1,6 +1,8 @@
 const PREFIX = '/pw';
 const LEGACY_PREFIX = '/parseworks';
 const API = '/api/overrides';
+const AUDIO_API = '/api/audio';
+const AUDIO_BASE = 'https://greek.billmounce.com/';
 
 // Fields the editor may change. Anything else in a patch is refused, so a
 // bug or a hostile caller cannot reach the parsing the app grades on.
@@ -138,6 +140,28 @@ async function handleApi(request, env) {
   return json({ saved: entries.length - removed, removed, at: now });
 }
 
+// Report on a recording. The bucket sends no CORS headers, so the editor
+// cannot look at a file itself: an <audio> element will play one, but fetch
+// is refused, and every failure looks the same from the page. Checking here
+// tells a missing file from an empty one, which are fixed differently.
+async function handleAudioApi(request) {
+  const file = new URL(request.url).searchParams.get('file') || '';
+  // Only ever the bucket, and only a name of the shape the data uses.
+  if (!/^\d+\.\d+-[A-Za-z]\.[A-Za-z0-9]{2,4}$/.test(file)) {
+    return json({ error: 'not a recording filename' }, 400);
+  }
+  const chapter = parseInt(file, 10);
+  const url = `${AUDIO_BASE}chpt${String(chapter).padStart(2, '0')}/hints/${file}`;
+  try {
+    const res = await fetch(url, { cf: { cacheTtl: 0 } });
+    if (!res.ok) return json({ file, url, status: res.status, bytes: null });
+    const bytes = (await res.arrayBuffer()).byteLength;
+    return json({ file, url, status: res.status, bytes });
+  } catch (err) {
+    return json({ file, url, status: 0, bytes: null, error: err.message });
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -158,6 +182,10 @@ export default {
 
     if (path === API || path === API + '/') {
       return handleApi(request, env);
+    }
+
+    if (path === AUDIO_API || path === AUDIO_API + '/') {
+      return handleAudioApi(request);
     }
 
     const targetUrl = env.PAGES_URL + path + url.search;

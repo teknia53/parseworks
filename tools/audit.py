@@ -6,6 +6,12 @@ current rather than a list someone typed out once.
 
     python3 tools/audit.py            # readable report
     python3 tools/audit.py --json     # same findings as JSON
+    python3 tools/audit.py --audio    # also fetch every recording
+
+--audio checks each recording in the bucket. It catches a file that is
+missing, and one that is present but empty, which answers 200 and plays
+like nothing at all. It makes a request per recording, so it is off by
+default.
 """
 
 import argparse
@@ -14,6 +20,8 @@ import json
 import re
 import sys
 import unicodedata
+import urllib.error
+import urllib.request
 
 HTML = 'site/index.html'
 AUDIO_BASE = 'https://greek.billmounce.com/chpt{ch:02d}/hints/'
@@ -55,7 +63,21 @@ def where(row):
             f"#{int(row['ORDERINCHAPTER']) + 1}")
 
 
-def audit(data):
+def probe(url):
+    """Status and byte count for one recording. Cloudflare turns away
+    urllib's default user agent, hence the header."""
+    req = urllib.request.Request(url, method='GET',
+                                 headers={'user-agent': 'parseworks-tools/1.0'})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return r.status, len(r.read())
+    except urllib.error.HTTPError as e:
+        return e.code, 0
+    except Exception:
+        return 0, 0
+
+
+def audit(data, check_audio=False):
     findings = collections.OrderedDict()
 
     # --- text hints -------------------------------------------------------
@@ -132,6 +154,28 @@ def audit(data):
             continue
         if m.group(1) != d['CHAPTER'] and d['TRACK'] == '1':
             stray.append({'at': where(d), 'word': d['INFLECTED'], 'file': a})
+    if check_audio:
+        unreachable, empty = [], []
+        for file in sorted({d['AUDIOHINT'] for d in data if d['AUDIOHINT']}):
+            chapter = int(re.match(r'(\d+)', file).group(1))
+            url = AUDIO_BASE.format(ch=chapter) + file
+            status, size = probe(url)
+            if status != 200:
+                unreachable.append({'file': file, 'status': status, 'url': url})
+            elif size == 0:
+                # 200 with nothing in it: looks fine in the bucket, plays
+                # like a missing file. Usually a move that lost the audio.
+                empty.append({'file': file, 'url': url})
+        findings['recording is missing'] = {
+            'why': 'The word names a file the bucket does not hold.',
+            'rows': unreachable,
+        }
+        findings['recording is an empty file'] = {
+            'why': 'Present but zero bytes, so it answers 200 and plays '
+                   'like nothing at all.',
+            'rows': empty,
+        }
+
     findings["audio filename names another chapter"] = {
         'why': "Track 2 legitimately points at track 1's recording of the "
                'same word; a track 1 row doing this is suspect.',
@@ -204,9 +248,12 @@ def audit(data):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--json', action='store_true')
+    ap.add_argument('--audio', action='store_true',
+                    help='fetch every recording and report the missing and '
+                         'the empty. Slow; off by default.')
     args = ap.parse_args()
     data, _ = load()
-    findings = audit(data)
+    findings = audit(data, check_audio=args.audio)
 
     if args.json:
         json.dump(findings, sys.stdout, ensure_ascii=False, indent=2,
