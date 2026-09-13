@@ -6,6 +6,61 @@
 <title>ParseWorks — Greek Morphology</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- site-header-head:start -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+.site-header { --sh-blue: #0067ac; background: var(--sh-blue); color: #fff; font-family: "Open Sans", Helvetica, Arial, sans-serif; box-shadow: 0 0 50px 0 rgba(255,255,255,0.3); position: relative; z-index: 100; }
+.site-header *, .site-header *::before, .site-header *::after { box-sizing: border-box; }
+.site-header__content { display: flex; align-items: center; justify-content: space-between; padding: 10px 4%; position: relative; }
+.site-header .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(1px,1px,1px,1px); white-space: nowrap; }
+.header-logo__link { display: block; color: #fff; text-decoration: none; line-height: 0; }
+.header-logo__link svg { display: block; width: 215px; height: 32px; max-width: 100%; height: auto; }
+.site-branding { padding: 20px 0; }
+.site-slogan { font-size: 16px; line-height: 1.5; padding-top: 8px; }
+
+.header-navigation-wrapper { display: contents; }
+.primary-menu { position: relative; }
+.primary-menu__list { list-style: none; margin: 0; padding: 0; }
+.primary-menu__list--level-1 { display: flex; flex-wrap: wrap; }
+.primary-menu__list-item--level-1 { display: flex; position: static; transition: opacity 0.2s; }
+.primary-menu__link { color: #fff; text-decoration: none; font-weight: 400; }
+.primary-menu__link--level-1 { display: block; font-size: 20px; line-height: 30px; padding: 8px 0 8px 16px; }
+.primary-menu__button-toggle { align-self: stretch; width: 24px; margin-left: 2px; padding: 0; appearance: none; border: 0; background: transparent; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; }
+.primary-menu__button-icon { display: block; width: 8px; height: 8px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(-45deg); transition: transform 0.2s; }
+.primary-menu__list--level-2 { position: absolute; top: 100%; left: 0; min-width: 100%; display: flex; flex-direction: column; gap: 4px; padding: 16px 0 16px 16px; background: var(--sh-blue); visibility: hidden; opacity: 0; transition: visibility 0.2s, opacity 0.2s; z-index: 1; }
+.primary-menu__list-item--level-1:is(:hover, :focus-within, .is-open) > .primary-menu__list--level-2 { visibility: visible; opacity: 1; }
+.primary-menu__list--level-1:has(.primary-menu__list-item--level-1:hover) .primary-menu__list-item--level-1:not(:hover) { opacity: 0.5; }
+.primary-menu__link--level-2 { display: inline-block; font-size: 20px; line-height: 30px; padding: 4px 0; }
+.primary-menu__link--level-2:hover { text-decoration: underline; }
+
+.mobile-nav-button { display: none; width: 48px; height: 48px; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative; flex-shrink: 0; }
+.mobile-nav-button__icon, .mobile-nav-button__icon::before, .mobile-nav-button__icon::after { display: block; width: 38px; height: 3px; background: #fff; position: absolute; left: 5px; transition: transform 0.2s, background 0.2s; }
+.mobile-nav-button__icon { top: 22px; }
+.mobile-nav-button__icon::before { content: ""; left: 0; top: -11px; }
+.mobile-nav-button__icon::after { content: ""; left: 0; top: 11px; }
+.site-header.is-menu-open .mobile-nav-button__icon { background: transparent; }
+.site-header.is-menu-open .mobile-nav-button__icon::before { top: 0; transform: rotate(45deg); }
+.site-header.is-menu-open .mobile-nav-button__icon::after { top: 0; transform: rotate(-45deg); }
+
+@media (width <= 1000px) {
+  .mobile-nav-button { display: block; }
+  .header-navigation-wrapper { display: none; position: absolute; top: 100%; left: 0; right: 0; background: rgba(14, 22, 34, 0.95); z-index: 100; }
+  .site-header.is-menu-open .header-navigation-wrapper { display: block; }
+  .header-navigation-wrapper__scrollable { padding: 32px; max-height: calc(100vh - 150px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .primary-menu__list--level-1 { display: block; }
+  .primary-menu__list-item--level-1 { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; opacity: 1 !important; }
+  .primary-menu__link--level-1 { flex: 1 1 auto; font-size: 24px; line-height: 36px; padding: 8px 0; }
+  .primary-menu__button-toggle { width: 60px; height: 52px; margin: 0; }
+  .primary-menu__list--level-2 { position: static; display: none; flex-basis: 100%; min-width: 0; padding: 0 0 0 16px; gap: 0; background: transparent; visibility: visible; opacity: 1; transition: none; }
+  .primary-menu__list-item--level-1:is(:hover, :focus-within) > .primary-menu__list--level-2 { display: none; }
+  .primary-menu__list-item--level-1.is-open > .primary-menu__list--level-2 { display: block; }
+  .primary-menu__list-item--level-1.is-open > .primary-menu__button-toggle .primary-menu__button-icon { transform: translateY(2px) rotate(135deg); }
+  .primary-menu__link--level-2 { display: block; font-size: 18px; line-height: 27px; padding: 8px 0; }
+}
+</style>
+<!-- site-header-head:end -->
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -40,6 +95,44 @@
     font-size: 14px;
   }
 
+  /* ── APP TITLE BAND (under the shared BillMounce.com site header; same block as
+     the Greek Dictionary's: plum, centered, 28px serif, white) ── */
+  .app-title {
+    background: #6d2e6b;
+    color: #fff;
+    padding: 10px 20px 9px;
+    text-align: center;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;   /* link | title | (empty) keeps the title centered */
+    align-items: center;
+    gap: 12px;
+  }
+  .app-title h1 {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 28px;
+    font-weight: normal;
+    letter-spacing: 1px;
+    grid-column: 2;
+  }
+  /* Back to the lesson page the chapter came from; shows the chapter's name. */
+  .lesson-link {
+    grid-column: 1;
+    justify-self: start;
+    color: #fff;
+    text-decoration: none;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 16px;
+    line-height: 1.3;
+    opacity: 0.92;
+  }
+  .lesson-link:hover { text-decoration: underline; opacity: 1; }
+  .lesson-link::before { content: '\2190\00a0'; }   /* ← */
+  @media (max-width: 600px) {
+    .app-title { grid-template-columns: 1fr; gap: 4px; }
+    .app-title h1 { font-size: 22px; grid-column: 1; }
+    .lesson-link { grid-column: 1; justify-self: center; font-size: 14px; }
+  }
+
   /* ── TOP BAR ── */
   #topbar {
     background: var(--white);
@@ -55,36 +148,8 @@
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   }
 
-  #topbar h1 {
-    font-family: 'Times New Roman', Times, serif;
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: var(--blue);
-    margin-right: 4px;
-    letter-spacing: -0.02em;
-  }
 
-  #topbar .divider {
-    width: 1px;
-    height: 24px;
-    background: var(--border);
-    margin: 0 4px;
-  }
 
-  #backLink {
-    color: var(--blue);
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 6px 10px;
-    border-radius: 6px;
-    transition: background 0.15s, color 0.15s;
-    white-space: nowrap;
-  }
-  #backLink:hover {
-    background: #eef4fa;
-    color: var(--blue-dark);
-  }
 
   .btn-load {
     background: var(--green);
@@ -485,28 +550,130 @@
 </head>
 <body>
 
+<!-- site-header:start -->
+<header class="site-header" id="site-header">
+  <div class="site-header__content">
+    <div class="site-branding">
+      <a class="header-logo__link" href="https://www.billmounce.com/" rel="home"><svg role="img" aria-label="Bill Mounce" width="215" height="32" viewBox="0 0 215 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M9.04 2.44C11.4133 2.44 13.4 2.66667 15 3.12C16.6267 3.57333 17.84 4.32 18.64 5.36C19.4667 6.4 19.88 7.78667 19.88 9.52C19.88 10.64 19.6667 11.64 19.24 12.52C18.84 13.3733 18.2267 14.0933 17.4 14.68C16.6 15.24 15.6133 15.6267 14.44 15.84V16.04C15.64 16.2267 16.72 16.5733 17.68 17.08C18.6667 17.5867 19.44 18.3067 20 19.24C20.56 20.1733 20.84 21.3867 20.84 22.88C20.84 24.6133 20.44 26.0933 19.64 27.32C18.84 28.52 17.6933 29.44 16.2 30.08C14.7333 30.6933 12.9733 31 10.92 31H0.88V2.44H9.04ZM9.76 14.6C12.2133 14.6 13.8933 14.2133 14.8 13.44C15.7067 12.64 16.16 11.4667 16.16 9.92C16.16 8.34667 15.6 7.22667 14.48 6.56C13.3867 5.86667 11.6267 5.52 9.2 5.52H4.48V14.6H9.76ZM4.48 17.6V27.96H10.24C12.7733 27.96 14.5333 27.4667 15.52 26.48C16.5067 25.4933 17 24.2 17 22.6C17 21.5867 16.7733 20.7067 16.32 19.96C15.8933 19.2133 15.16 18.64 14.12 18.24C13.1067 17.8133 11.72 17.6 9.96 17.6H4.48ZM29.9356 9.56V31H26.4156V9.56H29.9356ZM28.2156 1.52C28.749 1.52 29.2156 1.70666 29.6156 2.08C30.0423 2.42666 30.2556 2.98666 30.2556 3.76C30.2556 4.50666 30.0423 5.06666 29.6156 5.44C29.2156 5.81333 28.749 6 28.2156 6C27.629 6 27.1356 5.81333 26.7356 5.44C26.3356 5.06666 26.1356 4.50666 26.1356 3.76C26.1356 2.98666 26.3356 2.42666 26.7356 2.08C27.1356 1.70666 27.629 1.52 28.2156 1.52ZM40.2481 31H36.7281V0.599998H40.2481V31ZM50.5606 31H47.0406V0.599998H50.5606V31ZM81.5659 31L72.1659 5.96H72.0059C72.0593 6.49333 72.0993 7.17333 72.1259 8C72.1793 8.82667 72.2193 9.73333 72.2459 10.72C72.2726 11.68 72.2859 12.6667 72.2859 13.68V31H68.9659V2.44H74.2859L83.0859 25.84H83.2459L92.2059 2.44H97.4859V31H93.9259V13.44C93.9259 12.5067 93.9393 11.5867 93.9659 10.68C93.9926 9.74667 94.0326 8.88 94.0859 8.08C94.1393 7.25333 94.1793 6.56 94.2059 6H94.0459L84.5259 31H81.5659ZM123.415 20.24C123.415 22.0267 123.175 23.6133 122.695 25C122.242 26.36 121.575 27.52 120.695 28.48C119.842 29.44 118.788 30.1733 117.535 30.68C116.308 31.16 114.935 31.4 113.415 31.4C112.002 31.4 110.695 31.16 109.495 30.68C108.295 30.1733 107.255 29.44 106.375 28.48C105.495 27.52 104.802 26.36 104.295 25C103.815 23.6133 103.575 22.0267 103.575 20.24C103.575 17.8667 103.975 15.8667 104.775 14.24C105.575 12.5867 106.722 11.3333 108.215 10.48C109.708 9.6 111.482 9.16 113.535 9.16C115.482 9.16 117.188 9.6 118.655 10.48C120.148 11.3333 121.308 12.5867 122.135 14.24C122.988 15.8667 123.415 17.8667 123.415 20.24ZM107.215 20.24C107.215 21.92 107.428 23.3867 107.855 24.64C108.308 25.8667 109.002 26.8133 109.935 27.48C110.868 28.1467 112.055 28.48 113.495 28.48C114.935 28.48 116.122 28.1467 117.055 27.48C117.988 26.8133 118.668 25.8667 119.095 24.64C119.548 23.3867 119.775 21.92 119.775 20.24C119.775 18.5333 119.548 17.08 119.095 15.88C118.642 14.68 117.948 13.76 117.015 13.12C116.108 12.4533 114.922 12.12 113.455 12.12C111.268 12.12 109.682 12.84 108.695 14.28C107.708 15.72 107.215 17.7067 107.215 20.24ZM146.914 9.56V31H144.034L143.514 28.16H143.354C142.9 28.9067 142.314 29.52 141.594 30C140.874 30.48 140.087 30.8267 139.234 31.04C138.38 31.28 137.487 31.4 136.554 31.4C134.847 31.4 133.407 31.1333 132.234 30.6C131.087 30.04 130.22 29.1867 129.634 28.04C129.047 26.8933 128.754 25.4133 128.754 23.6V9.56H132.314V23.36C132.314 25.0667 132.7 26.3467 133.474 27.2C134.247 28.0533 135.447 28.48 137.074 28.48C138.674 28.48 139.927 28.1867 140.834 27.6C141.767 26.9867 142.42 26.1067 142.794 24.96C143.194 23.7867 143.394 22.3733 143.394 20.72V9.56H146.914ZM164.04 9.16C166.6 9.16 168.534 9.78667 169.84 11.04C171.147 12.2667 171.8 14.2667 171.8 17.04V31H168.32V17.28C168.32 15.5467 167.934 14.2533 167.16 13.4C166.387 12.5467 165.174 12.12 163.52 12.12C161.147 12.12 159.507 12.7867 158.6 14.12C157.694 15.4533 157.24 17.3733 157.24 19.88V31H153.72V9.56H156.56L157.08 12.48H157.28C157.76 11.7333 158.347 11.12 159.04 10.64C159.76 10.1333 160.547 9.76 161.4 9.52C162.254 9.28 163.134 9.16 164.04 9.16ZM187.047 31.4C185.154 31.4 183.46 31.0133 181.967 30.24C180.5 29.4667 179.34 28.2667 178.487 26.64C177.66 25.0133 177.247 22.9333 177.247 20.4C177.247 17.76 177.687 15.6133 178.567 13.96C179.447 12.3067 180.634 11.0933 182.127 10.32C183.647 9.54667 185.367 9.16 187.287 9.16C188.38 9.16 189.434 9.28 190.447 9.52C191.46 9.73333 192.287 10 192.927 10.32L191.847 13.24C191.207 13 190.46 12.7733 189.607 12.56C188.754 12.3467 187.954 12.24 187.207 12.24C185.767 12.24 184.58 12.5467 183.647 13.16C182.714 13.7733 182.02 14.68 181.567 15.88C181.114 17.08 180.887 18.5733 180.887 20.36C180.887 22.0667 181.114 23.52 181.567 24.72C182.02 25.92 182.7 26.8267 183.607 27.44C184.514 28.0533 185.647 28.36 187.007 28.36C188.18 28.36 189.207 28.24 190.087 28C190.994 27.76 191.82 27.4667 192.567 27.12V30.24C191.847 30.6133 191.047 30.8933 190.167 31.08C189.314 31.2933 188.274 31.4 187.047 31.4ZM205.946 9.16C207.786 9.16 209.359 9.56 210.666 10.36C211.999 11.16 213.012 12.2933 213.706 13.76C214.426 15.2 214.786 16.8933 214.786 18.84V20.96H200.106C200.159 23.3867 200.772 25.24 201.946 26.52C203.146 27.7733 204.812 28.4 206.946 28.4C208.306 28.4 209.506 28.28 210.546 28.04C211.612 27.7733 212.706 27.4 213.826 26.92V30C212.732 30.48 211.652 30.8267 210.586 31.04C209.519 31.28 208.252 31.4 206.786 31.4C204.759 31.4 202.959 30.9867 201.386 30.16C199.839 29.3333 198.626 28.1067 197.746 26.48C196.892 24.8267 196.466 22.8133 196.466 20.44C196.466 18.0933 196.852 16.08 197.626 14.4C198.426 12.72 199.532 11.4267 200.946 10.52C202.386 9.61333 204.052 9.16 205.946 9.16ZM205.906 12.04C204.226 12.04 202.892 12.5867 201.906 13.68C200.946 14.7467 200.372 16.24 200.186 18.16H211.106C211.106 16.9333 210.919 15.8667 210.546 14.96C210.172 14.0533 209.599 13.3467 208.826 12.84C208.079 12.3067 207.106 12.04 205.906 12.04Z" fill="white"/>
+</svg></a>
+      <div class="site-slogan">For an Informed Love of God</div>
+    </div>
+    <button class="mobile-nav-button" type="button" aria-controls="header-navigation-wrapper" aria-expanded="false">
+      <span class="visually-hidden">Menu</span>
+      <span class="mobile-nav-button__icon"></span>
+    </button>
+    <div class="header-navigation-wrapper" id="header-navigation-wrapper">
+      <div class="header-navigation-wrapper__scrollable">
+        <nav class="primary-menu" aria-label="Main navigation">
+          <ul class="primary-menu__list primary-menu__list--level-1">
+        <li class="primary-menu__list-item primary-menu__list-item--level-1 primary-menu__list-item--has-children">
+          <a href="https://www.billmounce.com/greek" class="primary-menu__link primary-menu__link--level-1 primary-menu__link--has-children">Classes</a>
+          <button class="primary-menu__button-toggle" type="button" aria-controls="primary-menu-item-1" aria-expanded="false"><span class="primary-menu__button-icon"></span><span class="visually-hidden">Classes sub-navigation</span></button>
+          <ul class="primary-menu__list primary-menu__list--level-2 site-header__dropdown" id="primary-menu-item-1">
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/biblestudygreek/class" class="primary-menu__link primary-menu__link--level-2">Bible Study Greek</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/biblicalgreek/1/class" class="primary-menu__link primary-menu__link--level-2">Biblical Greek: First Year (track 1)</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/biblicalgreek/2/class" class="primary-menu__link primary-menu__link--level-2">Biblical Greek: First Year (track 2)</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/second-year-greek" class="primary-menu__link primary-menu__link--level-2">Second Year Greek</a></li>
+          </ul>
+        </li>
+        <li class="primary-menu__list-item primary-menu__list-item--level-1 primary-menu__list-item--has-children">
+          <a href="https://www.billmounce.com/greekresources" class="primary-menu__link primary-menu__link--level-1 primary-menu__link--has-children">Resources</a>
+          <button class="primary-menu__button-toggle" type="button" aria-controls="primary-menu-item-2" aria-expanded="false"><span class="primary-menu__button-icon"></span><span class="visually-hidden">Resources sub-navigation</span></button>
+          <ul class="primary-menu__list primary-menu__list--level-2 site-header__dropdown" id="primary-menu-item-2">
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://billmounce.com/InterlinearBible" class="primary-menu__link primary-menu__link--level-2">Greek-English Interlinear Bible</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/greek-dictionary" class="primary-menu__link primary-menu__link--level-2">Greek Dictionary</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/first-year-biblical-greek" class="primary-menu__link primary-menu__link--level-2">All Resources for BBG</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/flashworks" class="primary-menu__link primary-menu__link--level-2">FlashWorks</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/greekwordoftheday" class="primary-menu__link primary-menu__link--level-2">Greek Word of the Day</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/fun-things-say-greek" class="primary-menu__link primary-menu__link--level-2">Fun Things to Say in Greek</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/free-greek-font-tekniagreek" class="primary-menu__link primary-menu__link--level-2">Free Greek Font: TekniaGreek</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/tekniagreek-unicode-keyboard" class="primary-menu__link primary-menu__link--level-2">Greek Unicode Keyboard</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/greekalphabet" class="primary-menu__link primary-menu__link--level-2">Greek Alphabet</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/greek-songs" class="primary-menu__link primary-menu__link--level-2">Greek Songs</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/free_bingo" class="primary-menu__link primary-menu__link--level-2">Greek and Hebrew Bingo</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/converter" class="primary-menu__link primary-menu__link--level-2">TekniaGreek to Unicode converter</a></li>
+          </ul>
+        </li>
+        <li class="primary-menu__list-item primary-menu__list-item--level-1 primary-menu__list-item--has-children">
+          <a href="https://www.billmounce.com/bills-publications" class="primary-menu__link primary-menu__link--level-1 primary-menu__link--has-children">Publications</a>
+          <button class="primary-menu__button-toggle" type="button" aria-controls="primary-menu-item-3" aria-expanded="false"><span class="primary-menu__button-icon"></span><span class="visually-hidden">Publications sub-navigation</span></button>
+          <ul class="primary-menu__list primary-menu__list--level-2 site-header__dropdown" id="primary-menu-item-3">
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/greekvocabulary/why-i-trust-the-bible" class="primary-menu__link primary-menu__link--level-2">Why I Trust the Bible</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/publications/bible-study-greek" class="primary-menu__link primary-menu__link--level-2">Bible Study Greek</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/first-year-biblical-greek" class="primary-menu__link primary-menu__link--level-2">First Year Greek</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/publications/second-year-greek" class="primary-menu__link primary-menu__link--level-2">Second Year Greek</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/publications/writing" class="primary-menu__link primary-menu__link--level-2">Professional and Pastoral Writing</a></li>
+          </ul>
+        </li>
+        <li class="primary-menu__list-item primary-menu__list-item--level-1 primary-menu__list-item--has-children">
+          <a href="https://www.billmounce.com/bills-blogs" class="primary-menu__link primary-menu__link--level-1 primary-menu__link--has-children">Blogs</a>
+          <button class="primary-menu__button-toggle" type="button" aria-controls="primary-menu-item-4" aria-expanded="false"><span class="primary-menu__button-icon"></span><span class="visually-hidden">Blogs sub-navigation</span></button>
+          <ul class="primary-menu__list primary-menu__list--level-2 site-header__dropdown" id="primary-menu-item-4">
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/blogs/monday-with-mounce" class="primary-menu__link primary-menu__link--level-2">Monday with Mounce</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/blogs/path" class="primary-menu__link primary-menu__link--level-2">The Path</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/blogs/gwotd" class="primary-menu__link primary-menu__link--level-2">Greek Word of the Day</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/blogs/gvotd" class="primary-menu__link primary-menu__link--level-2">Greek Verse of the Day</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/blogs/professor" class="primary-menu__link primary-menu__link--level-2">The Professor says</a></li>
+          <li class="primary-menu__list-item primary-menu__list-item--level-2"><a href="https://www.billmounce.com/blogs/bible-study-greek" class="primary-menu__link primary-menu__link--level-2">Bible Study Greek</a></li>
+          </ul>
+        </li>
+        <li class="primary-menu__list-item primary-menu__list-item--level-1">
+          <a href="https://www.billmounce.com/store" class="primary-menu__link primary-menu__link--level-1">Store</a>
+        </li>
+        <li class="primary-menu__list-item primary-menu__list-item--level-1">
+          <a href="https://www.gofundme.com/f/cover-my-website-costs?utm_campaign=p_lico+share-sheet&amp;utm_medium=copy_link&amp;utm_source=customer" class="primary-menu__link primary-menu__link--level-1">Donate</a>
+        </li>
+        <li class="primary-menu__list-item primary-menu__list-item--level-1">
+          <a href="https://www.billmounce.com/user/login" class="primary-menu__link primary-menu__link--level-1">Login</a>
+        </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>
+<script>
+(function () {
+  var header = document.getElementById('site-header');
+  if (!header) return;
+  var button = header.querySelector('.mobile-nav-button');
+  button.addEventListener('click', function () {
+    var open = header.classList.toggle('is-menu-open');
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  var toggles = header.querySelectorAll('.primary-menu__button-toggle');
+  function closeAll(except) {
+    toggles.forEach(function (t) {
+      var li = t.parentNode;
+      if (li !== except) { li.classList.remove('is-open'); t.setAttribute('aria-expanded', 'false'); }
+    });
+  }
+  toggles.forEach(function (t) {
+    t.addEventListener('click', function (e) {
+      e.preventDefault();
+      var li = t.parentNode;
+      closeAll(li);
+      var open = li.classList.toggle('is-open');
+      t.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (!header.contains(e.target)) closeAll(null);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeAll(null); header.classList.remove('is-menu-open'); button.setAttribute('aria-expanded', 'false'); }
+  });
+})();
+</script>
+<!-- site-header:end -->
+<div class="app-title">
+  <a id="lessonLink" class="lesson-link" hidden></a>
+  <h1>ParseWorks</h1>
+</div>
+
 <!-- TOP BAR -->
 <div id="topbar">
-  <a id="backLink" href="https://BillMounce.com/">← Back</a>
-  <div class="divider"></div>
-  <h1>ParseWorks</h1>
-  <div class="divider"></div>
-  <script>
-    // If the user came from another page, send them back to that exact page.
-    (function () {
-      try {
-        var ref = document.referrer;
-        if (ref) {
-          var refHost = new URL(ref).hostname;
-          var hereHost = window.location.hostname;
-          // Only override if referrer is a different page (not this same app reloading itself)
-          if (refHost !== hereHost || !ref.includes('/Parseworks')) {
-            document.getElementById('backLink').href = ref;
-          }
-        }
-      } catch (e) { /* keep default fallback */ }
-    })();
-  </script>
   <button class="btn-load" onclick="loadChapter()">Click to load chapter:</button>
   <select id="chapterSelect"></select>
   <div class="track-group">
@@ -705,8 +872,24 @@ function updateChapterList() {
   sel.innerHTML = chapters.map(c => `<option value="${c}">Chapter ${c}</option>`).join('');
 }
 
+// The lesson page a chapter belongs to on BillMounce.com (Basics of Biblical
+// Greek, tracks 1 and 2). The band's link shows the chapter's name.
+const LESSONS = {"1":{"1":{"url":"/biblicalgreek/1-the-greek-language","title":"1. The Greek Language"}},"10":{"1":{"url":"/biblicalgreek/10-third-declension","title":"10. Third Declension"},"2":{"url":"/biblicalgreek/10-third-declension-track-2","title":"10. Third Declension"}},"11":{"1":{"url":"/biblicalgreek/11-first-and-second-person-personal-pronouns","title":"11. First and Second Person Personal Pronouns"},"2":{"url":"/biblicalgreek/11-first-and-second-person-personal-pronouns-track-2","title":"11. First and Second Person Personal Pronouns"}},"12":{"1":{"url":"/biblicalgreek/12-aytos","title":"12. αὐτός"},"2":{"url":"/biblicalgreek/12-aytos-track-2","title":"12. αὐτός"}},"13":{"1":{"url":"/biblicalgreek/13-demonstrative-pronouns","title":"13. Demonstrative Pronouns"},"2":{"url":"/biblicalgreek/13-demonstrative-pronouns-track-2","title":"13. Demonstrative Pronouns"}},"14":{"1":{"url":"/biblicalgreek/14-relative-pronouns","title":"14. Relative Pronouns"},"2":{"url":"/biblicalgreek/14-relative-pronouns-track-2","title":"14. Relative Pronouns"}},"15":{"1":{"url":"/biblicalgreek/15-introduction-verbs","title":"15. Introduction to Verbs"},"2":{"url":"/biblicalgreek/15-introduction-verbs-track-2","title":"15. Introduction to Verbs"}},"16":{"1":{"url":"/biblicalgreek/16-present-active-indicative","title":"16. Present Active Indicative"},"2":{"url":"/biblicalgreek/16-present-active-indicative-track-2","title":"16. Present Active Indicative"}},"17":{"1":{"url":"/biblicalgreek/17-contract-verbs","title":"17. Contract Verbs"},"2":{"url":"/biblicalgreek/17-contract-verbs-track-2","title":"17. Contract Verbs"}},"18":{"1":{"url":"/biblicalgreek/18-present-middlepassive-indicative","title":"18. Present Middle/Passive Indicative"},"2":{"url":"/biblicalgreek/18-present-middlepassive-indicative-track-2","title":"18. Present Middle/Passive Indicative"}},"19":{"1":{"url":"/biblicalgreek/19-future-activemiddle-indicative","title":"19. Future Active/Middle Indicative"},"2":{"url":"/biblicalgreek/19-future-activemiddle-indicative-track-2","title":"19. Future Active/Middle Indicative"}},"2":{"1":{"url":"/biblicalgreek/2-learning-greek","title":"2. Learning Greek"}},"20":{"1":{"url":"/biblicalgreek/20-verbal-roots-and-other-forms-the-future","title":"20. Verbal Roots, and Other Forms of the Future"},"2":{"url":"/biblicalgreek/20-verbal-roots-and-other-forms-the-future-track-2","title":"20. Verbal Roots, and Other Forms of the Future"}},"21":{"1":{"url":"/biblicalgreek/21-imperfect-indicative","title":"21. Imperfect Indicative"},"2":{"url":"/biblicalgreek/21-imperfect-indicative-track-2","title":"21. Imperfect Indicative"}},"22":{"1":{"url":"/biblicalgreek/22-second-aorist-activemiddle-indicative","title":"22. Second Aorist Active/Middle Indicative"}},"23":{"1":{"url":"/biblicalgreek/23-first-aorist-activemiddle-indicative","title":"23. First Aorist Active/Middle Indicative"}},"24":{"1":{"url":"/biblicalgreek/24-aorist-and-future-passive-indicative","title":"24. Aorist and Future Passive Indicative"}},"25":{"1":{"url":"/biblicalgreek/25-perfect-indicative","title":"25. Perfect Indicative"}},"26":{"1":{"url":"/biblicalgreek/26-introduction-participles","title":"26. Introduction to Participles"}},"27":{"1":{"url":"/biblicalgreek/27-imperfective-present-adverbial-participles","title":"27. Imperfective (Present) Adverbial Participles"}},"28":{"1":{"url":"/biblicalgreek/28-perfective-aorist-adverbial-participles","title":"28. Perfective (Aorist) Adverbial Participles"}},"29":{"1":{"url":"/biblicalgreek/29-adjectival-participles","title":"29. Adjectival Participles"}},"3":{"1":{"url":"/biblicalgreek/3-alphabet-and-pronunciation","title":"3. The Alphabet and Pronunciation"}},"30":{"1":{"url":"/biblicalgreek/30-combinative-perfect-participles-and-genitive-absolutes","title":"30. Combinative (Perfect) Participles and Genitive Absolutes"}},"31":{"1":{"url":"/biblicalgreek/31-subjunctive","title":"31. Subjunctive"}},"32":{"1":{"url":"/biblicalgreek/32-infinitive","title":"32. Infinitive"}},"33":{"1":{"url":"/biblicalgreek/33-imperative","title":"33. Imperative"}},"34":{"1":{"url":"/biblicalgreek/34-indicative-didomi","title":"34. Indicative of δίδωμι"}},"35":{"1":{"url":"/biblicalgreek/35-nonindicative-didomi-conditional-sentences","title":"35. Nonindicative of δίδωμι; Conditional Sentences"}},"36":{"1":{"url":"/biblicalgreek/36-istimi-tithimi-deiknymi-odds-n-ends","title":"36. ἵστημι, τίθημι, δείκνυμι; Odds 'n Ends"}},"37":{"1":{"url":"/biblicalgreek/37-whats-next-and-other-blogs","title":"37. What's Next, and Other Blogs"}},"4":{"1":{"url":"/biblicalgreek/4-punctuation-and-syllabification","title":"4. Punctuation and Syllabification"}},"5":{"1":{"url":"/biblicalgreek/5-introduction-english-nouns","title":"5. Introduction to English nouns"}},"6":{"1":{"url":"/biblicalgreek/6-nominative-and-accusative-definite-article","title":"6. Nominative and Accusative; Definite Article"}},"7":{"1":{"url":"/biblicalgreek/7-genitive-and-dative","title":"7. Genitive and Dative"}},"8":{"1":{"url":"/biblicalgreek/8-prepositions-and-eimi","title":"8. Prepositions and εἰμί"}},"9":{"1":{"url":"/biblicalgreek/9-adjectives","title":"9. Adjectives"}}};
+
+function showLessonLink(ch) {
+  const a = document.getElementById('lessonLink');
+  const lesson = LESSONS[String(ch)];
+  const page = lesson && (lesson[getTrack()] || lesson['1'] || lesson['2']);
+  if (!page) { a.hidden = true; return; }
+  a.href = 'https://www.billmounce.com' + page.url;
+  a.textContent = page.title;
+  a.title = 'Back to the lesson';
+  a.hidden = false;
+}
+
 function loadChapter() {
   const ch = document.getElementById('chapterSelect').value;
+  showLessonLink(ch);
   if (!ch) return;
   currentChapter = ALL_DATA.filter(d => d.CHAPTER == ch && d.TRACK === getTrack());
   currentIndex = 0;
