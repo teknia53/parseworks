@@ -2,11 +2,13 @@ name = "parseworks-proxy"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 
+# Since the new billmounce.com launched (10 Oct 2026) the site serves its own
+# copy of ParseWorks at /pw/; this Worker answers only /pw/api (corrections
+# and audio, D1 parseworks-edits). The editor /pw/edit/ is proxied to Pages
+# by the site's _redirects.
 routes = [
-  { pattern = "billmounce.com/pw*", zone_name = "billmounce.com" },
-  { pattern = "www.billmounce.com/pw*", zone_name = "billmounce.com" },
-  # Legacy path, apex only. Not routed on www, where /parseworks is a Drupal info node.
-  { pattern = "billmounce.com/parseworks*", zone_name = "billmounce.com" }
+  { pattern = "billmounce.com/pw/api*", zone_name = "billmounce.com" },
+  { pattern = "www.billmounce.com/pw/api*", zone_name = "billmounce.com" }
 ]
 
 [vars]
